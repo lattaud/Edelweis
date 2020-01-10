@@ -2,7 +2,7 @@
 
 using namespace std;
 
-Plot_HEnergy_Voltage::Plot_HEnergy_Voltage(const std::string list_name_in , Double_t HEAT, bool IsRun, bool On_processed , std::string outputdir){
+Plot_HEnergy_Voltage::Plot_HEnergy_Voltage(const std::string list_name_in , Double_t HEAT, bool IsRun, bool On_processed , std::string outputdir, bool local_list_){
 	
 
 	TH1::SetDefaultSumw2();	
@@ -10,6 +10,7 @@ Plot_HEnergy_Voltage::Plot_HEnergy_Voltage(const std::string list_name_in , Doub
 	OutputDir = outputdir ;
 	system(("Create_outputdir.sh "+OutputDir).c_str());
 	list_name = list_name_in;
+	local_list = local_list_ ;
 	if (IsRun){
 		RunOnly(HEAT);
 	}
@@ -83,8 +84,12 @@ void Plot_HEnergy_Voltage::Parse_List(){
 	        std::cout<<" adding : /sps/edelweis/rootDataRun317/streams/prodg/lists/"<<list_name_temp<< ".list Temp "<< Heat_cat[ilist]<< std::endl;
 	        string file = list_name_temp ;
 	        if(file == temp_namelistIN) continue;
-	        ///ifstream efficiencies(("/sps/edelweis/rootDataRun317/streams/prodg/lists/"+file+".list").c_str(),ios::in);
-	        ifstream efficiencies((file+".list").c_str(),ios::in);
+	        std::string prefix_list = "/pbs/home/h/hlattaud/PLOTEH/"  ;
+	        
+	        if(local_list == 0) prefix_list = "/sps/edelweis/rootDataRun317/streams/prodg/lists/" ;
+	        
+	        ifstream efficiencies((prefix_list+file+".list").c_str(),ios::in);
+	       // ifstream efficiencies((file+".list").c_str(),ios::in);
 	        std::string ListRun_name[100];
 	        while(!efficiencies.eof() ){
 

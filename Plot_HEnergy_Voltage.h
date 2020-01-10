@@ -88,10 +88,10 @@ class Plot_HEnergy_Voltage{
 		Int_t micro_step;
 		Int_t N_partition;
 		Double_t f_max_heat;
-		
+		bool local_list;
 		
 	public:
-		Plot_HEnergy_Voltage(std::string list_name, Double_t Heat, bool IsRun, bool On_processed, std::string outputdir );
+		Plot_HEnergy_Voltage(std::string list_name, Double_t Heat, bool IsRun, bool On_processed, std::string outputdir, bool local_list );
 		
 		~Plot_HEnergy_Voltage();
 		
