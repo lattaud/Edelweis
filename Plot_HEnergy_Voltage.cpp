@@ -83,7 +83,7 @@ void Plot_HEnergy_Voltage::Parse_List(){
 	        std::cout<<" adding : /sps/edelweis/rootDataRun317/streams/prodg/lists/"<<list_name_temp<< ".list Temp "<< Heat_cat[ilist]<< std::endl;
 	        string file = list_name_temp ;
 	        if(file == temp_namelistIN) continue;
-	        //ifstream efficiencies(("/sps/edelweis/rootDataRun317/streams/prodg/lists/"+file+".list").c_str(),ios::in);
+	        ///ifstream efficiencies(("/sps/edelweis/rootDataRun317/streams/prodg/lists/"+file+".list").c_str(),ios::in);
 	        ifstream efficiencies((file+".list").c_str(),ios::in);
 	        std::string ListRun_name[100];
 	        while(!efficiencies.eof() ){
@@ -91,7 +91,7 @@ void Plot_HEnergy_Voltage::Parse_List(){
 	       	 	efficiencies>>ListRun_name[count_line_mc];
 			std::cout<<" List content "<< ListRun_name[count_line_mc]<<std::endl;
 			system(("Create_list.sh "+ListRun_name[count_line_mc]).c_str());
-			if (ListRun_name[count_line_mc] != "") {
+			if (ListRun_name[count_line_mc] != " ") {
 
 				std::cout<<" Run name ? " << ListRun_name[count_line_mc]<< " Heat  "<< Heat_cat[ilist] <<std::endl;						
 				RunList( Heat_cat[ilist] , ListRun_name[count_line_mc] );
@@ -261,7 +261,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	
 	
 	
-	Ellapsed_time = time_2 - time_1 ;
+	Ellapsed_time = 1. / ( time_2 - time_1 );
 	
 	
 	chain_index   ->GetEntry(0) ;
@@ -269,7 +269,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	
 	std::cout<<" Voltage and Temp for run : "<< Run_name <<" "<<Voltage<<" V "<<" "<< heat<<" mK run lasted for "<< Ellapsed_time / 3600.<< " h" <<std::endl; 
 	std::string voltname = "pos"+to_string(fabs( Voltage));
-	if(Voltage < 0) voltname = "neg"+to_string(fabs( Voltage));
+	//if(Voltage < 0) voltname = "neg"+to_string(fabs( Voltage));
 	std::string histname  ;
 	std::string histname_ee  ;
 
