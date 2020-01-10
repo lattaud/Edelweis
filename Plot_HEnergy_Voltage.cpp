@@ -90,16 +90,17 @@ void Plot_HEnergy_Voltage::Parse_List(){
 
 	       	 	efficiencies>>ListRun_name[count_line_mc];
 			std::cout<<" List content "<< ListRun_name[count_line_mc]<<std::endl;
-			//Heat_cat[count_line_mc]	= Heat_perRun ;
 			system(("Create_list.sh "+ListRun_name[count_line_mc]).c_str());
 			if (ListRun_name[count_line_mc] != "") {
 
-				std::cout<<" Run name ? " << ListRun_name[count_line_mc]<< " Heat  "<< Heat_cat[ilist] <<std::endl;				
+				std::cout<<" Run name ? " << ListRun_name[count_line_mc]<< " Heat  "<< Heat_cat[ilist] <<std::endl;						
 				RunList( Heat_cat[ilist] , ListRun_name[count_line_mc] );
 				
 			}
 	       	 	count_line_mc += 1; 
 	        }
+	        
+
 		ilist++;
 		temp_namelistIN = file ;
 		
@@ -110,7 +111,10 @@ void Plot_HEnergy_Voltage::Parse_List(){
 void Plot_HEnergy_Voltage::Open_file( std::string file_name){
 
 
-	if(IS_PROCESSED==0){
+	//if(IS_PROCESSED==0){
+	
+	// everest output
+	
 		chain_voltage    = new TChain("heatCalibData") ;
 		chain_index      = new TChain("boloHeader");		
 		chain_HeatEnergy = new TChain("Energies_Trig_Filt_Decor") ;
@@ -131,7 +135,8 @@ void Plot_HEnergy_Voltage::Open_file( std::string file_name){
 		        chain_HeatEnergy  ->Add(pNamemc);
 			chain_chi2A       ->Add(pNamemc);
 		}
-	
+		N_partition = count_line ;
+		cout<<N_partition << " partition in the Run " << endl;
 		cout << "[+] Linking variable...                                 " << endl;
 		chain_voltage      -> SetBranchAddress ("Voltage",&Voltage);
 		chain_index        -> SetBranchAddress ("indexHeatCalibData",&Index_Calib);
@@ -143,38 +148,42 @@ void Plot_HEnergy_Voltage::Open_file( std::string file_name){
 		Nb_index      = chain_index      -> GetEntries();
 		Nb_HeatEnergy = chain_HeatEnergy -> GetEntries();
 		Nb_chi2       = chain_chi2A      -> GetEntries();
-	}else{
+	//}else{
 	
-		chain_voltage    = new TChain("RunTree_Normal") ;
+		//Processed stuff (Nepal output) 
 		
+		chain_voltage_pro            = new TChain("RunTree_Normal") ;
+		chain_event_processed    = new TChain("EventTree_trig_Normal_filt_decor");
 	
-        	std::string inputListMC_ = file_name;
-		ifstream ismc(("List/"+Run_name+"_processed").c_str());
+        	 inputListMC_ = file_name;
+		ifstream ismc_2(("List/"+Run_name+"_processed").c_str());
 		count_line = 0;
-		char pNamemc[500];
-		while( ismc.getline(pNamemc, 500, '\n') )
+		 pNamemc[500];
+		while( ismc_2.getline(pNamemc, 500, '\n') )
 		{
         		if (pNamemc[0] == '#') continue;
         		if (pNamemc[0] == '\n') continue;
         		count_line += 1; 
 		        std::cout<<" adding : "<<pNamemc<<std::endl;
-		        chain_voltage     ->Add(pNamemc);
+		        chain_voltage_pro     ->Add(pNamemc);
+		        chain_event_processed ->Add(pNamemc);
 		        
 		}
-	
-		cout << "[+] Linking variable...                                 " << endl;
-		chain_voltage      -> SetBranchAddress ("PSD_Filt",&PDS_noise);
-		chain_voltage      -> SetBranchAddress ("Polar_Ion",&polarion);
-		chain_voltage      -> SetBranchAddress ("cutoff_freq",&cutofffreq);
-		chain_voltage      -> SetBranchAddress ("filter_order",&filter_order);
-		chain_voltage      -> SetBranchAddress ("Chan_Gain",&nVtoADU);
-		chain_voltage      -> SetBranchAddress ("PSD_Freq",&PDS_freq);
-	
-		Nb_voltage    = chain_voltage    -> GetEntries();
 		
-		std::cout<<" test : "<<Nb_voltage << std::endl;
+		chain_voltage_pro   	  -> SetBranchAddress ("PSD_Filt",&PDS_noise);
+		chain_voltage_pro   	  -> SetBranchAddress ("Polar_Ion",&polarion);
+		chain_voltage_pro  	  -> SetBranchAddress ("cutoff_freq",&cutofffreq);
+		chain_voltage_pro  	  -> SetBranchAddress ("filter_order",&filter_order);
+		chain_voltage_pro  	   -> SetBranchAddress ("Chan_Gain",&nVtoADU);
+		chain_voltage_pro   	  -> SetBranchAddress ("PSD_Freq",&PDS_freq);
+		chain_voltage_pro  	  -> SetBranchAddress ("f_max_heat",&f_max_heat);
+		
+		chain_event_processed     -> SetBranchAddress ("MicroStp",&micro_step);
+		
+		Nb_voltage    = chain_voltage_pro    -> GetEntries();
+		
 	
-	}
+	//}
 	
 	//if(Nb_chi2 != Nb_HeatEnergy) throw "Trees have different sized : CHECK REQUESTED";
 	cout << "[+] Linking variable... done                           " << endl;
@@ -233,11 +242,32 @@ Double_t Plot_HEnergy_Voltage::Kevee_weight(Double_t Eh){
 
 void Plot_HEnergy_Voltage::Loop_over_Chain(){
 
+// Calculate time spent in whole run
+	Double_t temp_freq_heat_max = 0 ;
+	chain_voltage_pro->GetEntry(3);
+	temp_freq_heat_max = f_max_heat ;
+	
+	
+	
+	Double_t Ellapsed_time = 0;
+	
+	chain_event_processed->GetEntry(0);
+	
+	Double_t time_1 = micro_step / temp_freq_heat_max ;
+	
+	chain_event_processed->GetEntry(chain_event_processed->GetEntries() - 1 );
+	
+	Double_t time_2 = (micro_step / temp_freq_heat_max) +  3600 * (N_partition - 1)  ;
+	
+	
+	
+	Ellapsed_time = time_2 - time_1 ;
+	
 	
 	chain_index   ->GetEntry(0) ;
 	chain_voltage ->GetEntry(Index_Calib);
 	
-	std::cout<<" Voltage and Temp for run : "<< Run_name <<" "<<Voltage<<" V "<<" "<< heat<<" mK "<<std::endl; 
+	std::cout<<" Voltage and Temp for run : "<< Run_name <<" "<<Voltage<<" V "<<" "<< heat<<" mK run lasted for "<< Ellapsed_time / 3600.<< " h" <<std::endl; 
 	std::string voltname = "pos"+to_string(fabs( Voltage));
 	if(Voltage < 0) voltname = "neg"+to_string(fabs( Voltage));
 	std::string histname  ;
@@ -381,14 +411,15 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 
 		Reso_cat_buffer += Reso_cat; 
 
-		H_Ehee       -> Fill(Eh, EpBinIndex(Eh, binning_vec_kevee));
-		H_Eh         -> Fill(Ep, EpBinIndex(Ep, binning_vec) );
-		H_Eh_lowres  ->Fill(Ep, EpBinIndex(Ep, binning_vec_low_res) );
+		H_Ehee       -> Fill(Eh, Ellapsed_time*EpBinIndex(Eh, binning_vec_kevee));
+		H_Eh         -> Fill(Ep, Ellapsed_time*EpBinIndex(Ep, binning_vec) );
+		H_Eh_lowres  ->Fill(Ep, Ellapsed_time*EpBinIndex(Ep, binning_vec_low_res) );
 		//std::cout<<" testing hist weight "<< Kevee_weight(Eh) << "  " << EpBinIndex(Ep, binning_vec) <<std::endl;
 		
 	} 
 	
 	Reso_cat_buffer = Reso_cat_buffer/Nb_HeatEnergy;
+	
 	
 	Write_histo_tofile(heat, Voltage, Run_name);
 	 
@@ -397,7 +428,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 
 void Plot_HEnergy_Voltage::Loop_over_Chain_processed(){
 	
-	chain_voltage->GetEntry(0);
+	chain_voltage_pro->GetEntry(0);
 	std::cout<<" Voltage and Temp for run : "<< Run_name <<" "<<polarion[0] -polarion[2]<<" V "<<" "<< heat<<" mK "<<std::endl; 
 	std::string voltname = "pos"+to_string(fabs(polarion[0] -polarion[2]));
 	if(polarion[0] -polarion[2] < 0) voltname = "neg"+to_string(fabs( polarion[0] -polarion[2]));
@@ -419,28 +450,30 @@ void Plot_HEnergy_Voltage::Loop_over_Chain_processed(){
 	
 	Double_t psd_filt [1024] = {0.};
 	Double_t psd_freq [1024] = {0.};
+	Double_t temp_freq_heat_max = 0 ;
 	
-	for(int it = 0; it <  chain_voltage->GetEntries() ; it ++){
+	for(int it = 0; it <  chain_voltage_pro->GetEntries() ; it ++){
 		
-		chain_voltage->GetEntry(it);
+		chain_voltage_pro->GetEntry(it);
 	
 		for(int it2 = 0; it2 <  1024 ; it2++){
 
 			psd_filt[it2] += std::pow (nVtoADU[0]* 1./(sqrt (1+ std::pow(cutofffreq/PDS_noise[it2][0],2*filter_order))),2);
 			psd_freq[it2] = PDS_freq [it2] ;
 			
-			if(it = chain_voltage->GetEntries() - 1 ) psd_filt[it2] = std::sqrt(psd_filt[it2]);
+			if(it = chain_voltage_pro->GetEntries() - 1 ) psd_filt[it2] = std::sqrt(psd_filt[it2]);
 		}
 	
-		
+		temp_freq_heat_max = f_max_heat ;
 		
 	}
-	
-	
 	
 	PSD_plot = new TGraphErrors(1024,psd_freq, psd_filt );	
 	
 	Write_histo_tofile(heat, polarion[0] -polarion[2], Run_name);
+	
+	
+	
 
 
 }
@@ -486,6 +519,19 @@ void Plot_HEnergy_Voltage::Init(){
 	}	
  
 }
+void Plot_HEnergy_Voltage::Estimate_Run_ellapsed_time(){
+
+
+
+
+
+}
+
+void Plot_HEnergy_Voltage::loop_over_generic_chain(TChain* chain){
+
+
+}
+
 
 void Plot_HEnergy_Voltage::cleaning(){
 

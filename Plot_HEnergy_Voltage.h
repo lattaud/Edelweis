@@ -41,6 +41,8 @@ class Plot_HEnergy_Voltage{
 		TChain* chain_index ;		
 		TChain* chain_HeatEnergy ;
 		TChain* chain_chi2A;
+		TChain* chain_event_processed ;
+		TChain* chain_voltage_pro;
 		std::string file_name;
 		std::string list_name;
 		std::string Run_name;
@@ -83,7 +85,9 @@ class Plot_HEnergy_Voltage{
 		Double_t Reso_cat;
 		Double_t Reso_cat_buffer;
 		
-		
+		Int_t micro_step;
+		Int_t N_partition;
+		Double_t f_max_heat;
 		
 		
 	public:
@@ -105,6 +109,8 @@ class Plot_HEnergy_Voltage{
 		void SetTemp(Double_t heat_);
 		void SetRunname();
 		void SetRunname(std::string runName);
+		void Estimate_Run_ellapsed_time();
+		void loop_over_generic_chain(TChain* chain);
 		//void GetEntryChain(Int_t Nchain, std::string  chainnames),
 		void cleaning();
 		Double_t EpBinIndex(Double_t Ep, std::vector<Double_t> binning );
