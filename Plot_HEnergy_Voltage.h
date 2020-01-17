@@ -63,7 +63,9 @@ class Plot_HEnergy_Voltage{
 		TH1D * H_Eh_lowres;
 		TH1D * H_Ehee;
 		TH2D * H2_Eh_chi2;
+		TH1D * Time_per_voltage;
 		TGraphErrors * PSD_plot;
+		TGraphErrors * PSD_plot_reso;
 		
 		
 		TH1D ** PSD_spectrum; 

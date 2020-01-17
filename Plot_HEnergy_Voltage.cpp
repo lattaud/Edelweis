@@ -197,9 +197,16 @@ void Plot_HEnergy_Voltage::Write_histo_tofile(float temp, int voltage, std::stri
 
 	std::string reso_CAT;
 	std::string Processed = "";
-	if(Reso_cat_buffer < 1.) reso_CAT = "highres";
-	if(Reso_cat_buffer < 2. && Reso_cat_buffer >= 1.) reso_CAT = "mediumres";
+	if(Reso_cat_buffer < 1.3) reso_CAT = "highres";
+	if(Reso_cat_buffer < 2. && Reso_cat_buffer >= 1.3) reso_CAT = "mediumres";
 	if( Reso_cat_buffer >= 2.) reso_CAT = "lowres";
+	
+	//new categorisation 
+	/*if(Reso_cat_buffer < 2.) reso_CAT = "highres";
+	if(Reso_cat_buffer < 5. && Reso_cat_buffer >= 2.) reso_CAT = "mediumres";
+	if( Reso_cat_buffer >= 5.) reso_CAT = "lowres";*/
+	
+	
 	if( IS_PROCESSED==1) Processed = "processed";
 	
 	if(allRUN == 1) Output_Files = new TFile((OutputDir+"/Eh_allruns_"+to_string(temp)+"mk.root").c_str(),"UPDATE");
@@ -207,11 +214,12 @@ void Plot_HEnergy_Voltage::Write_histo_tofile(float temp, int voltage, std::stri
 	
 	TParameter<Double_t> * resoHEAT = new TParameter<Double_t>("Resolution_heat", Reso_cat_buffer);
 	if( run_name != "" && IS_PROCESSED==0) {
-		H_Ehee      ->Write();    
-		H_Eh        ->Write();
-		H2_Eh_chi2  ->Write();
+		H_Ehee       ->Write();    
+		H_Eh         ->Write();
+		H2_Eh_chi2   ->Write();
 		H_Eh_lowres  ->Write();
 		resoHEAT     ->Write();
+		Time_per_voltage->Write();
 		
 	}else{
 	
@@ -250,29 +258,29 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 // Calculate time spent in whole run
 	Double_t temp_freq_heat_max = 0 ;
 	chain_voltage_pro->GetEntry(3);
-	temp_freq_heat_max = f_max_heat ;
+	temp_freq_heat_max = f_max_heat ;	
+	Double_t Ellapsed_time = 0;	
+	chain_event_processed->GetEntry(0);	
+	Double_t time_1 = micro_step / temp_freq_heat_max ;	
+	chain_event_processed->GetEntry(chain_event_processed->GetEntries() - 1 );	
+	Double_t time_2 = (micro_step / temp_freq_heat_max) +  3600 * (N_partition - 1)  ;	
+	Ellapsed_time = ( time_2 - time_1 );
 	
 	
-	
-	Double_t Ellapsed_time = 0;
-	
+	// Test time calculus alternatives 
 	chain_event_processed->GetEntry(0);
-	
-	Double_t time_1 = micro_step / temp_freq_heat_max ;
-	
+	Double_t altime1 = 3600. - micro_step / temp_freq_heat_max ;
 	chain_event_processed->GetEntry(chain_event_processed->GetEntries() - 1 );
-	
-	Double_t time_2 = (micro_step / temp_freq_heat_max) +  3600 * (N_partition - 1)  ;
-	
-	
-	
-	Ellapsed_time = 1. / ( time_2 - time_1 );
-	
-	
+	Double_t altime2 = altime1 + ((micro_step / temp_freq_heat_max)  + (3600. *( N_partition - 2))) ;
+// End time spent in whole run	calculus.
+
 	chain_index   ->GetEntry(0) ;
 	chain_voltage ->GetEntry(Index_Calib);
 	
-	std::cout<<" Voltage and Temp for run : "<< Run_name <<" "<<Voltage<<" V "<<" "<< heat<<" mK run lasted for "<< Ellapsed_time / 3600.<< " h" <<std::endl; 
+	std::cout<<" Time 1 "<<   time_1 << " Time 2 "<< time_2 << "  alternative calculus "<< altime2 / 3600. << " h " <<std::endl;
+	
+	
+	std::cout<<" Voltage and Temp for run : "<< Run_name <<" "<<Voltage<<" V "<<" "<< heat<<" mK run lasted for "<< (Ellapsed_time) / 3600.<< " h" <<std::endl; 
 	std::string voltname = "pos"+to_string(fabs( Voltage));
 	//if(Voltage < 0) voltname = "neg"+to_string(fabs( Voltage));
 	std::string histname  ;
@@ -416,15 +424,59 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 
 		Reso_cat_buffer += Reso_cat; 
 
-		H_Ehee       -> Fill(Eh, Ellapsed_time*EpBinIndex(Eh, binning_vec_kevee));
-		H_Eh         -> Fill(Ep, Ellapsed_time*EpBinIndex(Ep, binning_vec) );
-		H_Eh_lowres  ->Fill(Ep, Ellapsed_time*EpBinIndex(Ep, binning_vec_low_res) );
+		H_Ehee       -> Fill(Eh, EpBinIndex(Eh, binning_vec_kevee));
+		H_Eh         -> Fill(Ep, EpBinIndex(Ep, binning_vec) );
+		H_Eh_lowres  ->Fill(Ep, EpBinIndex(Ep, binning_vec_low_res) );
 		//std::cout<<" testing hist weight "<< Kevee_weight(Eh) << "  " << EpBinIndex(Ep, binning_vec) <<std::endl;
 		
 	} 
 	
+	
+	
+	
+	
 	Reso_cat_buffer = Reso_cat_buffer/Nb_HeatEnergy;
 	
+	Double_t psd_freq [15] = {0.};
+	Double_t psd_filt [15] = {0.};
+	
+	Double_t temp_max_filt = 0 ;
+	for(int it = 0; it <  chain_voltage_pro->GetEntries() ; it++){
+		
+		chain_voltage_pro->GetEntry(it);
+		for(int it2 = 0; it2 <  15 ; it2++){
+
+			psd_filt[it2] += std::pow (nVtoADU[0]* 1./(sqrt (1+ std::pow(cutofffreq/PDS_noise[it2][0],2*filter_order))),2);
+			psd_freq[it2] = PDS_freq [it2] ;
+			
+			
+			if(it == chain_voltage_pro->GetEntries() - 1 ) {
+				psd_filt[it2] = std::sqrt(psd_filt[it2]);
+				//std::cout<< " Freq : "<< psd_freq[it2] << "  Filt value "<< psd_filt[it2]<< "  nentries "<<  chain_voltage_pro->GetEntries()  <<std::endl;
+				if(psd_filt[it2] > temp_max_filt )temp_max_filt = psd_filt[it2] ;
+			}
+		}
+	
+	
+		
+	}
+	
+	
+	
+	//PSD_plot_reso = new TGraphErrors(15,psd_freq ,psd_filt );
+	
+	
+	//Reso_cat_buffer = temp_max_filt;
+	
+	std::cout<< " Max PSD noise : "<< Reso_cat_buffer <<std::endl;
+	
+	
+	Time_per_voltage = new TH1D ((histname+"_ellapsed_time").c_str(), (histname+"_ellapsed_time").c_str(),1,0.,1. );
+	
+	
+	Time_per_voltage->SetBinContent(1, Ellapsed_time );
+	
+	std::cout<<" Integral for renormalization "<< Time_per_voltage -> Integral() <<std::endl;
 	
 	Write_histo_tofile(heat, Voltage, Run_name);
 	 
