@@ -55,6 +55,7 @@ class Plot_HEnergy_Voltage{
 		Int_t    Index_Calib;
 		Double_t Eh;
 		Double_t chi2_A; 
+		Double_t Ei;
 		Int_t Nb_voltage;
 		Int_t Nb_index;
 		Int_t Nb_HeatEnergy;
@@ -64,6 +65,7 @@ class Plot_HEnergy_Voltage{
 		TH1D * H_Ehee;
 		TH2D * H2_Eh_chi2;
 		TH1D * Time_per_voltage;
+		TH2D * Ionration_vs_Ei;
 		TGraphErrors * PSD_plot;
 		TGraphErrors * PSD_plot_reso;
 		
@@ -100,7 +102,7 @@ class Plot_HEnergy_Voltage{
 		void RunOnly(Double_t Heat);
 		void RunList(Double_t Heat, std::string list);
 		void Help();
-		void Init();
+		int Init();
 		void Parse_List();
 		void Open_file( std::string file_name);
 		void Load_chain( std::string tree_name);

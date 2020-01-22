@@ -141,6 +141,7 @@ void Plot_HEnergy_Voltage::Open_file( std::string file_name){
 			chain_chi2A       ->Add(pNamemc);
 		}
 		N_partition = count_line ;
+		
 		cout<<N_partition << " partition in the Run " << endl;
 		cout << "[+] Linking variable...                                 " << endl;
 		chain_voltage      -> SetBranchAddress ("Voltage",&Voltage);
@@ -148,6 +149,7 @@ void Plot_HEnergy_Voltage::Open_file( std::string file_name){
 		chain_HeatEnergy   -> SetBranchAddress ("Eh",&Eh);
 		chain_chi2A        -> SetBranchAddress ("heatChi2A",&chi2_A);
 		chain_chi2A        -> SetBranchAddress ("heatResoA",&Reso_cat);
+		chain_HeatEnergy   -> SetBranchAddress ("Ei",&Ei);
 	
 		Nb_voltage    = chain_voltage    -> GetEntries();
 		Nb_index      = chain_index      -> GetEntries();
@@ -220,6 +222,7 @@ void Plot_HEnergy_Voltage::Write_histo_tofile(float temp, int voltage, std::stri
 		H_Eh_lowres  ->Write();
 		resoHEAT     ->Write();
 		Time_per_voltage->Write();
+		Ionration_vs_Ei->Write();
 		
 	}else{
 	
@@ -285,17 +288,20 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	//if(Voltage < 0) voltname = "neg"+to_string(fabs( Voltage));
 	std::string histname  ;
 	std::string histname_ee  ;
+	std::string histname_calib  ;
 
 
 	if(allRUN == 0){ 
 	
 		histname = "Ephonon_"+voltname+"_"+to_string(heat)+"mk" ;
 		histname_ee = "Ephonon_"+voltname+"_"+to_string(heat)+"mk_keVee" ;
+		histname_calib = "Ioniratio_vs_Ei_"+voltname+"_"+to_string(heat)+"mk" ;
 		
 	}else{
 	
 		histname = "Ephonon_"+voltname+"_"+to_string(heat)+"mk_"+Run_name ;
 		histname_ee = "Ephonon_"+voltname+"_"+to_string(heat)+"mk_"+Run_name+"_keVee" ;
+		histname_calib = "Ioniratio_vs_Ei_"+voltname+"_"+to_string(heat)+"mk" ;
 	
 	}
 	std::cout<<" Creating  Histo "<<histname<<std::endl;
@@ -337,7 +343,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 			binning_vec_kevee.push_back(iterator_bin_ee);
 		}
 
-	}while(iterator_bin_ee <= 15);
+	}while(iterator_bin_ee <= 100);
 	
 	Double_t Binning_keVee[binning_vec_kevee.size()];	
 	for(int it = 0 ; it < binning_vec_kevee.size() ; it ++){
@@ -412,6 +418,21 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	H2_Eh_chi2 -> SetBins((int)binning_vec.size() -1, Binning_keV , 999, Binning_chi2);
 	
 	
+	Double_t ratio_binninh [100] = {0};
+	
+	iterator_bin = 0 ;
+	for( int i = 0 ; i < 100 ; i++){
+	
+	 	ratio_binninh [i] = iterator_bin ;
+	 	
+		iterator_bin += 0.02 ;
+	}
+	
+	
+	Ionration_vs_Ei = new TH2D((histname_calib).c_str(), (histname_calib).c_str(),750, 0.,300.,100,0.,1500.);
+	Ionration_vs_Ei -> SetBins((int) binning_vec_kevee.size()-1,Binning_keVee,99 , ratio_binninh );
+	
+	
 	Reso_cat_buffer = 0 ; 
 	for(int it = 0; it < Nb_HeatEnergy; it++ ){
 		
@@ -424,10 +445,12 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 
 		Reso_cat_buffer += Reso_cat; 
 
-		H_Ehee       -> Fill(Eh, EpBinIndex(Eh, binning_vec_kevee));
-		H_Eh         -> Fill(Ep, EpBinIndex(Ep, binning_vec) );
-		H_Eh_lowres  ->Fill(Ep, EpBinIndex(Ep, binning_vec_low_res) );
-		//std::cout<<" testing hist weight "<< Kevee_weight(Eh) << "  " << EpBinIndex(Ep, binning_vec) <<std::endl;
+		H_Ehee          -> Fill(Eh, 1./EpBinIndex(Eh, binning_vec_kevee));
+		H_Eh            -> Fill(Ep, 1./EpBinIndex(Ep, binning_vec) );
+		H_Eh_lowres     -> Fill(Ep, 1./EpBinIndex(Ep, binning_vec_low_res) );
+		Ionration_vs_Ei -> Fill(fabs(Ei) , Eh / fabs(Ei) , 1./EpBinIndex(fabs(Ei), binning_vec_kevee));
+		
+		//std::cout<<" testing hist weight "<< Kevee_weight(Eh) << "  " << 1./EpBinIndex(Ep, binning_vec) <<std::endl;
 		
 	} 
 	
@@ -564,16 +587,19 @@ void Plot_HEnergy_Voltage::SetRunname(std::string runName_){
 
 
 }
-void Plot_HEnergy_Voltage::Init(){
+int Plot_HEnergy_Voltage::Init(){
 
 	//SetTemp();
 	//SetRunname();
-	Open_file(Run_name.c_str());	
+	Open_file(Run_name.c_str());
+	if(N_partition == 0) return 0;		
 	 if(IS_PROCESSED==0) {	 
 	 	Loop_over_Chain();
 	}else{
 		Loop_over_Chain_processed();
-	}	
+	}
+	
+	return 0;	
  
 }
 void Plot_HEnergy_Voltage::Estimate_Run_ellapsed_time(){
