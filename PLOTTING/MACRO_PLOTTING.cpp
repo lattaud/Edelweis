@@ -218,7 +218,7 @@ void Launch_plotting(std::string  Input_file, Double_t Temp, std::string List_of
 		
 	}
 	leg->Draw();
-	std::string name_plot = "Eh_vs_V_"+to_string(Temp)+"mk_normalized"+resoCAT+".pdf" ;
+	std::string name_plot = "Plot_output/Eh_vs_V_"+to_string(Temp)+"mk_normalized"+resoCAT+".pdf" ;
 	c->SaveAs(name_plot.c_str());
 
 	
@@ -250,7 +250,7 @@ void Launch_plotting(std::string  Input_file, Double_t Temp, std::string List_of
 		Hist_vec_kee [i]->Draw("HIST E SAME");
 	}
 	leg->Draw();
-	std::string name_plotneg = "Eh_kee_vs_V_"+to_string(Temp)+"mk_normalized"+resoCAT+".pdf" ;
+	std::string name_plotneg = "Plot_output/Eh_kee_vs_V_"+to_string(Temp)+"mk_normalized"+resoCAT+".pdf" ;
 	cc->SaveAs(name_plotneg.c_str());
 	
 	
