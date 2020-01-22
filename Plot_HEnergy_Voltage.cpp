@@ -159,8 +159,9 @@ void Plot_HEnergy_Voltage::Open_file( std::string file_name){
 	
 		//Processed stuff (Nepal output) 
 		
-		chain_voltage_pro            = new TChain("RunTree_Normal") ;
-		chain_event_processed    = new TChain("EventTree_trig_Normal_filt_decor");
+		chain_voltage_pro             = new TChain("RunTree_Normal") ;
+		chain_event_processed         = new TChain("EventTree_trig_Normal_filt_decor");
+		chain_event_processed_fast    = new TChain("EventTree_trig_Fast_filt");
 	
         	 inputListMC_ = file_name;
 		ifstream ismc_2(("List/"+Run_name+"_processed").c_str());
@@ -172,9 +173,9 @@ void Plot_HEnergy_Voltage::Open_file( std::string file_name){
         		if (pNamemc[0] == '\n') continue;
         		count_line += 1; 
 		        std::cout<<" adding : "<<pNamemc<<std::endl;
-		        chain_voltage_pro     ->Add(pNamemc);
-		        chain_event_processed ->Add(pNamemc);
-		        
+		        chain_voltage_pro           ->Add(pNamemc);
+		        chain_event_processed       ->Add(pNamemc);
+		        chain_event_processed_fast  ->Add(pNamemc);
 		}
 		
 		chain_voltage_pro   	  -> SetBranchAddress ("PSD_Filt",&PDS_noise);
@@ -184,9 +185,10 @@ void Plot_HEnergy_Voltage::Open_file( std::string file_name){
 		chain_voltage_pro  	   -> SetBranchAddress ("Chan_Gain",&nVtoADU);
 		chain_voltage_pro   	  -> SetBranchAddress ("PSD_Freq",&PDS_freq);
 		chain_voltage_pro  	  -> SetBranchAddress ("f_max_heat",&f_max_heat);
-		
-		chain_event_processed     -> SetBranchAddress ("MicroStp",&micro_step);
-		
+		 
+		chain_event_processed      -> SetBranchAddress ("MicroStp",&micro_step);
+		chain_event_processed      -> SetBranchAddress ("chi2_OF_h",&chi2_norm);
+		chain_event_processed_fast -> SetBranchAddress ("chi2_OF_h",&chi2_fast);
 		Nb_voltage    = chain_voltage_pro    -> GetEntries();
 		
 	
@@ -434,15 +436,27 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	
 	
 	Reso_cat_buffer = 0 ; 
+	
+	int rejected_dchi2 = 0;
 	for(int it = 0; it < Nb_HeatEnergy; it++ ){
 		
-		chain_HeatEnergy   ->GetEntry(it);
-		chain_chi2A        ->GetEntry(it);
+		chain_HeatEnergy           ->GetEntry(it);
+		chain_chi2A                ->GetEntry(it);
+		chain_event_processed      ->GetEntry(it);
+		chain_event_processed_fast ->GetEntry(it);
 		
 		Double_t Ep = Eh * (1 + (fabs(Voltage)/3.));
 		H2_Eh_chi2->Fill(Ep,(chi2_A/1024.));
+		
+		//chi2 cut
 		if((chi2_A/1024.) > (1.15 + 100 * TMath::Power(fabs(Ep)/300. , 3.)) )	 continue ;
-
+		
+		//delta chi2 cut
+		if((chi2_norm/1024.) - (chi2_fast/1024.) > 0.001){
+		
+			rejected_dchi2++;
+			continue;
+		}
 		Reso_cat_buffer += Reso_cat; 
 
 		H_Ehee          -> Fill(Eh, 1./EpBinIndex(Eh, binning_vec_kevee));
@@ -456,7 +470,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	
 	
 	
-	
+	std::cout<<" delta chi2 rejected "<<rejected_dchi2<<std::endl;
 	
 	Reso_cat_buffer = Reso_cat_buffer/Nb_HeatEnergy;
 	

@@ -42,7 +42,9 @@ class Plot_HEnergy_Voltage{
 		TChain* chain_HeatEnergy ;
 		TChain* chain_chi2A;
 		TChain* chain_event_processed ;
-		TChain* chain_voltage_pro;
+		TChain* chain_voltage_pro ;
+		TChain* chain_event_processed_fast ;
+		
 		std::string file_name;
 		std::string list_name;
 		std::string Run_name;
@@ -60,6 +62,10 @@ class Plot_HEnergy_Voltage{
 		Int_t Nb_index;
 		Int_t Nb_HeatEnergy;
 		Int_t Nb_chi2;
+		
+		
+		
+		
 		TH1D * H_Eh;
 		TH1D * H_Eh_lowres;
 		TH1D * H_Ehee;
@@ -67,11 +73,11 @@ class Plot_HEnergy_Voltage{
 		TH1D * Time_per_voltage;
 		TH2D * Ionration_vs_Ei;
 		TGraphErrors * PSD_plot;
-		TGraphErrors * PSD_plot_reso;
-		
-		
+		TGraphErrors * PSD_plot_reso;		
 		TH1D ** PSD_spectrum; 
 		TH1D * PSD_spectrum_summed;
+		
+		
 		Int_t count_line = 0;
 		Double_t heat;
 		Int_t Nlist;
@@ -87,12 +93,14 @@ class Plot_HEnergy_Voltage{
 		Double_t cutofffreq;
 		Int_t filter_order;
 		Double_t Reso_cat;
-		Double_t Reso_cat_buffer;
-		
+		Double_t Reso_cat_buffer;		
 		Int_t micro_step;
 		Int_t N_partition;
 		Double_t f_max_heat;
 		bool local_list;
+		
+		Double_t chi2_norm;
+		Double_t chi2_fast;
 		
 	public:
 		Plot_HEnergy_Voltage(std::string list_name, Double_t Heat, bool IsRun, bool On_processed, std::string outputdir, bool local_list );
