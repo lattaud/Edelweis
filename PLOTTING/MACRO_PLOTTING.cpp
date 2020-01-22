@@ -22,10 +22,11 @@
 #include "TChain.h"
 #include "TTree.h"
 #include "TString.h"
+#include "TGraphErrors.h"
 
 using namespace std;
 
-void Make_Nice_Hist(TH1D* hist , Double_t tension, Double_t norm, std::string xaxisname){
+void Make_Nice_Hist(TH1D* hist , Double_t tension, Double_t norm, std::string xaxisname, int rebin){
 
 	
 	if(fabs(tension) == 0 )		hist->SetLineColor(kBlack );
@@ -37,6 +38,8 @@ void Make_Nice_Hist(TH1D* hist , Double_t tension, Double_t norm, std::string xa
 	if(fabs(tension )== 70 )	hist->SetLineColor(kGreen - 7);
 	if(fabs(tension) == 78 )	hist->SetLineColor(kYellow - 2);
 	if(fabs(tension) == 40 )	hist->SetLineColor(kCyan - 2);
+	if(fabs(tension) == 51 )	hist->SetLineColor(kCyan + 3);
+	if(fabs(tension) == 57 )	hist->SetLineColor(kCyan );
 
 	/*if(tension == -0 )	hist->SetLineColor(kBlack );
 	if(tension == -8 )	hist->SetLineColor(kBlue + 1);
@@ -48,13 +51,18 @@ void Make_Nice_Hist(TH1D* hist , Double_t tension, Double_t norm, std::string xa
 	if(tension == -78 )	hist->SetLineColor(kYellow + 3);*/
 
 
-	hist->Scale(1./(((norm/(3600.*24.))  )* 0.03));
+	hist->Scale(1./(((norm/(3600.*24.)))* 0.03));
 	hist->SetLineWidth(2);
 	hist->GetXaxis()->SetTitle(xaxisname.c_str());
 	hist->GetXaxis()->SetTitleOffset(1.25);
 	hist->GetYaxis()->SetTitle("NEvent.keV ^{-1}.day^{-1}.kg^{-1}");
 	hist->GetYaxis()->SetTitleOffset(1.3);
-	//hist->GetYaxis()->SetRangeUser(0.01,1000);
+	//hist->GetYaxis()->SetRangeUser(10,10000000);
+	if (rebin == 1 ){
+	
+		hist->RebinX(4);
+		hist->GetXaxis()->SetRangeUser(10,10000000);
+	}
 	hist->SetTitle("");
 
 }
@@ -96,7 +104,7 @@ void Launch_plotting(std::string  Input_file, Double_t Temp, std::string List_of
 	std::string Tension_name;
 	Double_t Sign = 0 ; 
 	
-	std::string tension_ [9];
+	std::string tension_ [11];
 	
 	tension_ [0] = "0.000000";
 	tension_ [1] = "8.000000";
@@ -107,6 +115,8 @@ void Launch_plotting(std::string  Input_file, Double_t Temp, std::string List_of
 	tension_ [6] = "70.000000";
 	tension_ [7] = "78.000000";
 	tension_ [8] = "60.000000";
+	tension_ [9] = "51.000000";
+	tension_ [10] = "57.000000";
 	TLegend *leg = new TLegend(0.7, 0.7, .9, .9);
 	TLegend *legneg = new TLegend(0.7, 0.7, .9, .9);
 	TFile * Inputs = TFile::Open(Input_file.c_str());
@@ -122,7 +132,7 @@ void Launch_plotting(std::string  Input_file, Double_t Temp, std::string List_of
 		TString namehist = Hist_vec_normtime [i]->GetName();
 		if(namehist.Contains("pos", TString::kIgnoreCase) == 1) Sign = +1;
 		
-		for(int j = 0 ; j < 9 ; j++){
+		for(int j = 0 ; j < 11 ; j++){
 		
 			if(namehist.Contains((tension_ [j]).c_str(), TString::kIgnoreCase) == 1) {
 				
@@ -150,7 +160,7 @@ void Launch_plotting(std::string  Input_file, Double_t Temp, std::string List_of
 		TString namehist = Hist_vec [i]->GetName();
 		if(namehist.Contains("pos", TString::kIgnoreCase) == 1) Sign = +1;
 		
-		for(int j = 0 ; j < 9 ; j++){
+		for(int j = 0 ; j < 11 ; j++){
 		
 			if(namehist.Contains((tension_ [j]).c_str(), TString::kIgnoreCase) == 1) {
 				
@@ -164,95 +174,84 @@ void Launch_plotting(std::string  Input_file, Double_t Temp, std::string List_of
 		
 		
 		
-		Make_Nice_Hist(Hist_vec [i], Tension [i], Norm_Tension [i], " E_{phonon} (keV)");
-		Make_Nice_Hist(Hist_vec_kee [i], Tension [i], Norm_Tension [i], " E_{heat} (keVee)");
+		Make_Nice_Hist(Hist_vec [i], Tension [i], Norm_Tension [i], " E_{phonon} (keV)", 0);
+		Make_Nice_Hist(Hist_vec_kee [i], Tension [i], Norm_Tension [i], " E_{heat} (keVee)",0);
 		leg->AddEntry(Hist_vec [i],(to_string(Tension [i])+"V ").c_str(),"l");
 		
 	}
 	
 
+	TFile *red20_file = TFile::Open("output_red20.root", "UPDATE");
+	
+	
+	TGraphErrors * Red_20_graph = (TGraphErrors*) red20_file->Get("Red20_results");
+	Red_20_graph->SetMarkerColor(kBlack);
+	Red_20_graph->SetMarkerSize(1);
+	Red_20_graph->SetMarkerStyle(34);
+	leg->AddEntry(Red_20_graph, "RED20 surface spectrum", "p");
+	
 	
 	
 	TCanvas *c = new TCanvas("c","c",800,800);    
 	c->SetLogy();
 	c->SetLogx();
+	c->SetGridx();
+	c->SetGridy();
+	
+	TH2D * axes = new TH2D("axes", "", 100, 0.1, 12., 100, 10., 10000000  );
+	axes->GetXaxis()->SetTitle(" E_{phonon} (keV)");
+	axes->GetXaxis()->SetTitleOffset(1.25);
+	axes->GetYaxis()->SetTitle("NEvent.keV ^{-1}.day^{-1}.kg^{-1}");
+	axes->GetYaxis()->SetTitleOffset(1.3);
+	axes->GetYaxis()->SetRangeUser(20,10000000);
+	
+	axes->Draw("");
+	axes->SetStats(kFALSE);
+	
+	
+	Red_20_graph->Draw("PSAME");
 	for(int i = 0; i < Run_Name.size()  ; i++){
 
-		//if ( Tension [i] < 0) continue;
-		if(i == 0 ){
-			Hist_vec [i]->GetXaxis()->SetRangeUser(0.098, 12. );
-			Hist_vec [i]->SetStats(kFALSE);
-			Hist_vec [i]->Draw("HIST E ");
-			
-			
-		}
-		//std::cout<<"Integral "<<Hist_vec [i]->Integral()<<std::endl;
-		Hist_vec [i]->GetXaxis()->SetRangeUser(0.098, 12. );
 		Hist_vec [i]->SetStats(kFALSE);
 		Hist_vec [i]->Draw("HIST E SAME");
+		
+		
 	}
 	leg->Draw();
 	std::string name_plot = "Eh_vs_V_"+to_string(Temp)+"mk_normalized"+resoCAT+".pdf" ;
 	c->SaveAs(name_plot.c_str());
 
 	
-	/*for(int i = 0; i < Run_Name.size()  ; i++){
-
-		if ( Tension [i] > 0) continue;
-
-		if(i == 0 ){
-			Hist_vec [i]->GetXaxis()->SetRangeUser(0.098, 12. );
-			Hist_vec [i]->SetStats(kFALSE);
-			Hist_vec [i]->Draw("HIST E ");
-			
-			
-			
-		}	
-		Hist_vec [i]->GetXaxis()->SetRangeUser(0.098, 12. );
-		Hist_vec [i]->SetStats(kFALSE);
-		Hist_vec [i]->Draw("HIST E SAME");
-	}
-	legneg->Draw();*/
-	//std::string name_plotneg = "Eh_vs_negV_"+to_string(Temp)+"mk_normalized"+resoCAT+".pdf" ;
-	//c->SaveAs(name_plotneg.c_str());
-	
-	
 	
 	TCanvas *cc = new TCanvas("cc","cc",800,800);    
 	cc->SetLogy();
 	cc->SetLogx();
+	
+	cc->SetGridy();
+	cc->SetGridx();
+	
+	TH2D* axes2 = new TH2D("axes2", "", 100, 0.01, 12., 100, 100., 100000000  );
+	axes2->GetXaxis()->SetTitle(" E_{heat} (keVee)");
+	axes2->GetXaxis()->SetTitleOffset(1.25);
+	axes2->GetYaxis()->SetTitle("NEvent.keV ^{-1}.day^{-1}.kg^{-1}");
+	axes2->GetYaxis()->SetTitleOffset(1.3);
+	axes2->GetYaxis()->SetRangeUser(100,1000000000);
+	
+	axes2->Draw("");
+	axes2->SetStats(kFALSE);
+	
+	
+	Red_20_graph->Draw("PSAME");
+	
 	for(int i = 0; i < Run_Name.size()  ; i++){
 
-		//if ( Tension [i] >= 0) continue;
-		if(i == 0 ){
-			Hist_vec_kee [i]->Draw("HIST E ");
-			Hist_vec_kee [i]->SetStats(kFALSE);
-			Hist_vec_kee [i]->GetXaxis()->SetRangeUser(0.0001, 0.1 );
-		}
-		Hist_vec_kee [i]->SetStats(kFALSE);
-		Hist_vec_kee [i]->Draw("HIST E SAME");
-	}
-	legneg->Draw();
-	std::string name_plotneg = "Eh_kee_vs_V_"+to_string(Temp)+"mk_normalized"+resoCAT+".pdf" ;
-	//cc->SaveAs(name_plotneg.c_str());
-	
-	/*for(int i = 0; i < Run_Name.size()  ; i++){
 
-		if ( Tension [i] < 0) continue;
-		if(i == 0 ){
-		
-			Hist_vec_kee [i]->Draw("HIST E ");
-			Hist_vec_kee [i]->SetStats(kFALSE);
-			Hist_vec_kee [i]->GetXaxis()->SetRangeUser(0.0001, 0.1 );
-		}
 		Hist_vec_kee [i]->SetStats(kFALSE);
 		Hist_vec_kee [i]->Draw("HIST E SAME");
 	}
 	leg->Draw();
-	name_plotneg = "Eh_kee_vs_posV_"+to_string(Temp)+"mk_normalized"+resoCAT+".pdf" ;
+	std::string name_plotneg = "Eh_kee_vs_V_"+to_string(Temp)+"mk_normalized"+resoCAT+".pdf" ;
 	cc->SaveAs(name_plotneg.c_str());
-	*/
-	
 	
 	
 
