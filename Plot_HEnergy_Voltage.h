@@ -32,9 +32,9 @@
 #include "TDirectory.h"
 #include "TGraphErrors.h"
 #include "TParameter.h"
+#include "Cryo_Run.h"
 
-
-class Plot_HEnergy_Voltage{
+class Plot_HEnergy_Voltage {
 
 	private:
 		TChain* chain_voltage ;
@@ -72,6 +72,14 @@ class Plot_HEnergy_Voltage{
 		TH2D * H2_Eh_chi2;
 		TH1D * Time_per_voltage;
 		TH2D * Ionration_vs_Ei;
+		TH2D * Dchi2_vs_Ep_pass;
+		TH2D * Dchi2_vs_Ep_fail;
+		
+		TH2D * chi2_cut_vs_Ep_pass;
+		TH2D * chi2_cut_vs_Ep_fail;
+		
+		TGraph * reso_vs_time;
+		
 		TGraphErrors * PSD_plot;
 		TGraphErrors * PSD_plot_reso;		
 		TH1D ** PSD_spectrum; 
@@ -101,32 +109,36 @@ class Plot_HEnergy_Voltage{
 		
 		Double_t chi2_norm;
 		Double_t chi2_fast;
+		Int_t point_time_reso = 0 ;
+		long double Time_Crate ; 
 		
 	public:
-		Plot_HEnergy_Voltage(std::string list_name, Double_t Heat, bool IsRun, bool On_processed, std::string outputdir, bool local_list );
+		Plot_HEnergy_Voltage(const std::string &list_name , Double_t Heat , bool IsRun , bool On_processed , const std::string &outputdir, bool local_list );
 		
-		~Plot_HEnergy_Voltage();
+		~Plot_HEnergy_Voltage() = default;
 		
 		void RunOnly(Double_t Heat);
-		void RunList(Double_t Heat, std::string list);
+		void RunList(Double_t Heat, const std::string &list);
 		void Help();
-		int Init();
+		void Init();
 		void Parse_List();
-		void Open_file( std::string file_name);
-		void Load_chain( std::string tree_name);
+		void Open_file( const std::string &file_name);
+		void Load_chain( const std::string &tree_name);
 		void Loop_over_Chain();
 		void Loop_over_Chain_processed();
-		void Write_histo_tofile(float temp, int voltage, std::string run_name);
+		void Write_histo_tofile(float temp, int voltage, const std::string &run_name);
 		void SetTemp();
 		void SetTemp(Double_t heat_);
 		void SetRunname();
-		void SetRunname(std::string runName);
+		void SetRunname(const std::string &runName);
 		void Estimate_Run_ellapsed_time();
-		void loop_over_generic_chain(TChain* chain);
+		void loop_over_generic_chain( TChain* chain);
 		//void GetEntryChain(Int_t Nchain, std::string  chainnames),
 		void cleaning();
 		Double_t EpBinIndex(Double_t Ep, std::vector<Double_t> binning );
 		Double_t Kevee_weight(Double_t Eh);
+		void Write_timed_reso(const std::string &name_output_reso);
+		void Clean();
 		//void merge_outputfiles(float temp, int voltage);
 };
 

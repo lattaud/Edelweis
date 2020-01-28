@@ -12,7 +12,7 @@ INCS = $(shell root-config --incdir)
 
 .PHONY: clean rebuild
 
-OBJ = main.o Plot_HEnergy_Voltage.o  
+OBJ = main.o Cryo_Run.o Plot_HEnergy_Voltage.o  
  
 all: $(BINS) 
 
