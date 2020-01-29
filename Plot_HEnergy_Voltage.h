@@ -73,13 +73,10 @@ class Plot_HEnergy_Voltage {
 		TH1D * Time_per_voltage;
 		TH2D * Ionration_vs_Ei;
 		TH2D * Dchi2_vs_Ep_pass;
-		TH2D * Dchi2_vs_Ep_fail;
-		
+		TH2D * Dchi2_vs_Ep_fail;		
 		TH2D * chi2_cut_vs_Ep_pass;
-		TH2D * chi2_cut_vs_Ep_fail;
-		
-		TGraph * reso_vs_time;
-		
+		TH2D * chi2_cut_vs_Ep_fail;		
+		TGraph * reso_vs_time;		
 		TGraphErrors * PSD_plot;
 		TGraphErrors * PSD_plot_reso;		
 		TH1D ** PSD_spectrum; 
@@ -105,12 +102,12 @@ class Plot_HEnergy_Voltage {
 		Int_t micro_step;
 		Int_t N_partition;
 		Double_t f_max_heat;
-		bool local_list;
-		
-		Double_t chi2_norm;
-		Double_t chi2_fast;
+		bool local_list;		
+		Double_t chi2_norm[6];
+		Double_t chi2_fast[6];
+		double Time_Crate;		
 		Int_t point_time_reso = 0 ;
-		long double Time_Crate ; 
+		
 		
 	public:
 		Plot_HEnergy_Voltage(const std::string &list_name , Double_t Heat , bool IsRun , bool On_processed , const std::string &outputdir, bool local_list );

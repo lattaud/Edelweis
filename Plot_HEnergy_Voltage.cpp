@@ -56,7 +56,6 @@ void Plot_HEnergy_Voltage::Clean(){
 	delete chain_event_processed ;
 	delete chain_voltage_pro ;
 	delete chain_event_processed_fast ;
-
 	delete H_Eh;
 	delete H_Eh_lowres;
 	delete H_Ehee;
@@ -64,21 +63,16 @@ void Plot_HEnergy_Voltage::Clean(){
 	delete Time_per_voltage;
 	delete Ionration_vs_Ei;
 	delete Dchi2_vs_Ep_pass;
-	delete Dchi2_vs_Ep_fail;
-		
+	delete Dchi2_vs_Ep_fail;		
 	delete chi2_cut_vs_Ep_pass;
-	delete chi2_cut_vs_Ep_fail;
-		
-	delete reso_vs_time;
-		
+	delete chi2_cut_vs_Ep_fail;		
+	delete reso_vs_time;		
 	delete PSD_plot;
 	delete PSD_plot_reso;		
 	delete PSD_spectrum; 
-	delete PSD_spectrum_summed;
-	
+	delete PSD_spectrum_summed;	
 	delete Input_Files;
 	delete Output_Files;
-
 }
 
 
@@ -168,7 +162,7 @@ void Plot_HEnergy_Voltage::Open_file( const std::string & file_name ){
 		chain_event_processed         = new TChain("EventTree_trig_Normal_filt_decor");
 		chain_event_processed_fast    = new TChain("EventTree_trig_Fast_filt");
 	
-        	 inputListMC_ = file_name;
+        	inputListMC_ = file_name;
 		ifstream ismc_2(("List/"+Run_name+"_processed").c_str());
 		count_line = 0;
 		 pNamemc[500];
@@ -193,8 +187,7 @@ void Plot_HEnergy_Voltage::Open_file( const std::string & file_name ){
 		chain_event_processed      -> SetBranchAddress ("MicroStp",&micro_step);
 		chain_event_processed      -> SetBranchAddress ("Time_crate",&Time_Crate);		
 		chain_event_processed      -> SetBranchAddress ("chi2_OF_h",&chi2_norm);
-		chain_event_processed_fast -> SetBranchAddress ("chi2_OF_h",&chi2_fast);
-		Nb_voltage    = chain_voltage_pro    -> GetEntries();	
+		chain_event_processed_fast -> SetBranchAddress ("chi2_OF_h",&chi2_fast);	
 		cout << "[+] Linking variable... done                           " << endl;
 }
 
@@ -383,6 +376,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	chi2_cut_vs_Ep_fail -> SetBins((int)binning_vec.size() -1, Binning_keV , 9999, Binning_chi2);	
 	Reso_cat_buffer = 0 ; 	
 	int rejected_dchi2 = 0;
+// Loop on both processed and calib , apply quality cuts
 	for(int it = 0; it < Nb_HeatEnergy; it++, point_time_reso++ ){		
 		chain_HeatEnergy           ->GetEntry(it);
 		chain_chi2A                ->GetEntry(it);
@@ -390,7 +384,8 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 		chain_event_processed_fast ->GetEntry(it);		
 		Double_t Ep = Eh * (1 + (fabs(Voltage)/3.));
 		H2_Eh_chi2->Fill(Ep,(chi2_A/1024.), 1./EpBinIndex(Ep, binning_vec));		
-	        if ( it%100 == 0 )std::cout<< "absolute time  "<< Time_Crate  << " resolution "<< Reso_cat <<" entry "<<point_time_reso<<std::endl;	        
+	       // if ( it%1000 == 0 )std::cout<< "absolute time  "<< Time_Crate/100000.  << " resolution "<< Reso_cat <<" entry "<<point_time_reso<<std::endl;
+	        
 		reso_vs_time->SetPoint(point_time_reso,Time_Crate / 100000., Reso_cat);		
 		//chi2 cut
 		if((chi2_A/1024.) > (1.15 + 100 * TMath::Power(fabs(Ep)/300. , 3.)) ){			 
@@ -399,13 +394,13 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 		}
 		chi2_cut_vs_Ep_pass -> Fill(Ep, (chi2_A/1024.), 1./EpBinIndex(Ep, binning_vec));		
 		//delta chi2 cut
-		if((chi2_norm/1024.) - (chi2_fast/1024.) > 0.001){			
-			Dchi2_vs_Ep_fail -> Fill(Ep, (chi2_norm/1024.) - (chi2_fast/1024.), 1./EpBinIndex(Ep, binning_vec));
+		if((chi2_norm[0]/1024.) - (chi2_fast[0]/1024.) > 0.001){			
+			Dchi2_vs_Ep_fail -> Fill(Ep, (chi2_norm[0]/1024.) - (chi2_fast[0]/1024.), 1./EpBinIndex(Ep, binning_vec));
 			rejected_dchi2++;
 			continue;
 		}
 		Reso_cat_buffer += Reso_cat; 
-		Dchi2_vs_Ep_pass -> Fill(Ep, (chi2_norm/1024.) - (chi2_fast/1024.), 1./EpBinIndex(Ep, binning_vec));
+		Dchi2_vs_Ep_pass -> Fill(Ep, (chi2_norm[0]/1024.) - (chi2_fast[0]/1024.), 1./EpBinIndex(Ep, binning_vec));
 		H_Ehee           -> Fill(Eh, 1./EpBinIndex(Eh, binning_vec_kevee));
 		H_Eh             -> Fill(Ep, 1./EpBinIndex(Ep, binning_vec) );
 		H_Eh_lowres      -> Fill(Ep, 1./EpBinIndex(Ep, binning_vec_low_res) );
@@ -487,9 +482,9 @@ void Plot_HEnergy_Voltage::Init(){
 	//SetTemp();
 	//SetRunname();	
 	//Cryo_Run Run_317_reso_buffer ("reso_vs_time");
-	reso_vs_time = new TGraph();
 	point_time_reso = 0 ;
-	Open_file(Run_name.c_str());
+	reso_vs_time = new TGraph();
+	Open_file(Run_name.c_str());	
 	if(N_partition != 0) {	
 	 if(IS_PROCESSED==0) {	 
 	 	Loop_over_Chain();
