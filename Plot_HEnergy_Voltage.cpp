@@ -56,6 +56,7 @@ void Plot_HEnergy_Voltage::Clean(){
 	delete chain_event_processed ;
 	delete chain_voltage_pro ;
 	delete chain_event_processed_fast ;
+	delete chain_event_Reso_processed ;
 	delete H_Eh;
 	delete H_Eh_lowres;
 	delete H_Ehee;
@@ -91,6 +92,8 @@ void Plot_HEnergy_Voltage::Parse_List(){
 	int ilist = 0;
 	int count_line_mc = 0;
 	std::string line_list_IN ="";
+	point_time_reso = 0 ;
+	reso_vs_time = new TGraph();
 	if(!Listfile.fail()){
 		while(  std::getline(Listfile, line_list_IN) )
 		{
@@ -107,7 +110,9 @@ void Plot_HEnergy_Voltage::Parse_List(){
 		        ifstream efficiencies((prefix_list+file+".list").c_str());
 		        std::string ListRun_name[100] = {""};
 		        if(!efficiencies.fail()){
-		       		 while(std::getline( efficiencies,ListRun_name[count_line_mc] )){		
+		       		 while(std::getline( efficiencies,ListRun_name[count_line_mc] )){
+		       		        TString temp_str = ListRun_name[count_line_mc];
+		       		        if(temp_str.Contains("#", TString::kIgnoreCase)) continue ;	
 					std::cout<<" List content "<< ListRun_name[count_line_mc]<<std::endl;
 					system(("Create_list.sh "+ListRun_name[count_line_mc]).c_str());					
 					std::cout<<" Run name ? " << ListRun_name[count_line_mc]<< " Heat  "<< Heat_cat[ilist] <<std::endl;						RunList( Heat_cat[ilist] , ListRun_name[count_line_mc] );					
@@ -116,17 +121,19 @@ void Plot_HEnergy_Voltage::Parse_List(){
 			}
 			ilist++;		
 		}
-	}	
+	}
+	Write_timed_reso(("Resolution_timed_"+to_string(heat)+".root").c_str());	
 }
 
 void Plot_HEnergy_Voltage::Open_file( const std::string & file_name ){
 
 		//Everest output
 
-		chain_voltage    = new TChain("heatCalibData") ;
-		chain_index      = new TChain("boloHeader");		
-		chain_HeatEnergy = new TChain("Energies_Trig_Filt_Decor") ;
-		chain_chi2A      = new TChain("Amplitudes_Trig_Filt_Decor");	
+		chain_voltage              = new TChain("heatCalibData") ;
+		chain_index                = new TChain("boloHeader");		
+		chain_HeatEnergy           = new TChain("Energies_Trig_Filt_Decor") ;
+		chain_chi2A                = new TChain("Amplitudes_Trig_Filt_Decor");
+		chain_event_Reso_processed = new TChain("resolution_Noise_Filt_Decor");	
         	std::string inputListMC_ = file_name;
 		ifstream ismc(("List/"+Run_name).c_str());
 		count_line = 0;
@@ -137,25 +144,27 @@ void Plot_HEnergy_Voltage::Open_file( const std::string & file_name ){
         		if (pNamemc[0] == '\n') continue;
         		count_line += 1; 
 		        std::cout<<" adding : "<<pNamemc<<std::endl;
-		        chain_voltage     ->Add(pNamemc);
-		        chain_index       ->Add(pNamemc);
-		        chain_HeatEnergy  ->Add(pNamemc);
-			chain_chi2A       ->Add(pNamemc);
+		        chain_voltage                   ->Add(pNamemc);
+		        chain_index                     ->Add(pNamemc);
+		        chain_HeatEnergy                ->Add(pNamemc);
+			chain_chi2A                     ->Add(pNamemc);
+			chain_event_Reso_processed      ->Add(pNamemc);
 		}
 		N_partition = count_line ;		
 		cout<<N_partition << " partition in the Run " << endl;
 		cout << "[+] Linking variable...                                 " << endl;
-		chain_voltage      -> SetBranchAddress ("Voltage",&Voltage);
-		chain_index        -> SetBranchAddress ("indexHeatCalibData",&Index_Calib);
-		chain_HeatEnergy   -> SetBranchAddress ("Eh",&Eh);
-		chain_chi2A        -> SetBranchAddress ("heatChi2A",&chi2_A);
-		chain_chi2A        -> SetBranchAddress ("heatResoA",&Reso_cat);
-		chain_HeatEnergy   -> SetBranchAddress ("Ei",&Ei);	
+		chain_voltage              -> SetBranchAddress ("Voltage",&Voltage);
+		chain_index                -> SetBranchAddress ("indexHeatCalibData",&Index_Calib);
+		chain_HeatEnergy           -> SetBranchAddress ("Eh",&Eh);
+		chain_chi2A                -> SetBranchAddress ("heatChi2A",&chi2_A);
+		chain_chi2A                -> SetBranchAddress ("heatResoA",&Reso_cat);
+		chain_HeatEnergy           -> SetBranchAddress ("Ei",&Ei);	
+		chain_event_Reso_processed -> SetBranchAddress ("resoHeatA", &reso_eV); 
 		Nb_voltage    = chain_voltage    -> GetEntries();
 		Nb_index      = chain_index      -> GetEntries();
 		Nb_HeatEnergy = chain_HeatEnergy -> GetEntries();
 		Nb_chi2       = chain_chi2A      -> GetEntries();
-	
+	               
 		//Processed stuff (Nepal output) 
 		
 		chain_voltage_pro             = new TChain("RunTree_Normal") ;
@@ -185,7 +194,7 @@ void Plot_HEnergy_Voltage::Open_file( const std::string & file_name ){
 		chain_voltage_pro   	   -> SetBranchAddress ("PSD_Freq",&PDS_freq);
 		chain_voltage_pro  	   -> SetBranchAddress ("f_max_heat",&f_max_heat);		 
 		chain_event_processed      -> SetBranchAddress ("MicroStp",&micro_step);
-		chain_event_processed      -> SetBranchAddress ("Time_crate",&Time_Crate);		
+		chain_event_processed      -> SetBranchAddress ("Time_unix",&Time_Crate);		
 		chain_event_processed      -> SetBranchAddress ("chi2_OF_h",&chi2_norm);
 		chain_event_processed_fast -> SetBranchAddress ("chi2_OF_h",&chi2_fast);	
 		cout << "[+] Linking variable... done                           " << endl;
@@ -196,9 +205,18 @@ void Plot_HEnergy_Voltage::Write_histo_tofile(float temp, int voltage, const std
 	std::string reso_CAT="";
 	std::string Processed = "";	
 	//categorization based on ADU heat reso
-	if(Reso_cat_buffer < 1.3) reso_CAT = "highres";
-	if(Reso_cat_buffer < 2. && Reso_cat_buffer >= 1.3) reso_CAT = "mediumres";
-	if( Reso_cat_buffer >= 2.) reso_CAT = "lowres";	
+	bool eV_reso = true ;
+	if(eV_reso){
+	        if(Reso_cat_buffer < 0.05) reso_CAT = "highres";
+	        if(Reso_cat_buffer >= 0.05) reso_CAT = "mediumres";
+	 }
+	//categorization based on ADU heat reso
+	bool ADU_reso = false ;
+	if(ADU_reso){
+	        if(Reso_cat_buffer < 1.3) reso_CAT = "highres";
+	        if(Reso_cat_buffer < 2. && Reso_cat_buffer >= 1.3) reso_CAT = "mediumres";
+	        if( Reso_cat_buffer >= 2.) reso_CAT = "lowres";	
+	 }
 	//new categorisation 
 	bool PSD_cat = false ;
 	if(PSD_cat){
@@ -376,17 +394,20 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	chi2_cut_vs_Ep_fail -> SetBins((int)binning_vec.size() -1, Binning_keV , 9999, Binning_chi2);	
 	Reso_cat_buffer = 0 ; 	
 	int rejected_dchi2 = 0;
+	
 // Loop on both processed and calib , apply quality cuts
-	for(int it = 0; it < Nb_HeatEnergy; it++, point_time_reso++ ){		
+	for(int it = 0; it < Nb_HeatEnergy; it++ /*,point_time_reso++ */ ){		
 		chain_HeatEnergy           ->GetEntry(it);
 		chain_chi2A                ->GetEntry(it);
 		chain_event_processed      ->GetEntry(it);
-		chain_event_processed_fast ->GetEntry(it);		
+		chain_event_processed_fast ->GetEntry(it);
+				
 		Double_t Ep = Eh * (1 + (fabs(Voltage)/3.));
 		H2_Eh_chi2->Fill(Ep,(chi2_A/1024.), 1./EpBinIndex(Ep, binning_vec));		
-	       // if ( it%1000 == 0 )std::cout<< "absolute time  "<< Time_Crate/100000.  << " resolution "<< Reso_cat <<" entry "<<point_time_reso<<std::endl;
-	        
-		reso_vs_time->SetPoint(point_time_reso,Time_Crate / 100000., Reso_cat);		
+
+		//reso_vs_time->SetPoint(point_time_reso,(Time_Crate - 49*365.25*3600*24) /(3600.*24.), Reso_cat);
+		
+		
 		//chi2 cut
 		if((chi2_A/1024.) > (1.15 + 100 * TMath::Power(fabs(Ep)/300. , 3.)) ){			 
 			 chi2_cut_vs_Ep_fail-> Fill(Ep, (chi2_A/1024.), 1./EpBinIndex(Ep, binning_vec));
@@ -411,8 +432,13 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	Double_t psd_freq [15] = {0.};
 	Double_t psd_filt [15] = {0.};
 	Double_t temp_max_filt = 0 ;
+	//std::cout<<"testing resolution buffer : "<<  reso_eV << std::endl;
 	for(int it = 0; it <  chain_voltage_pro->GetEntries() ; it++){	
 		chain_voltage_pro->GetEntry(it);
+		chain_event_Reso_processed ->GetEntry(it);
+		
+		Reso_cat_buffer = pow(reso_eV,2) ;
+		
 		for(int it2 = 0; it2 <  15 ; it2++){
 			psd_filt[it2] += std::pow (nVtoADU[0]* 1./(sqrt (1+ std::pow(cutofffreq/PDS_noise[it2][0],2*filter_order))),2);
 			psd_freq[it2] = PDS_freq [it2] ;						
@@ -424,9 +450,13 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	}	
 	//PSD_plot_reso = new TGraphErrors(15,psd_freq ,psd_filt );
 	//Reso_cat_buffer = temp_max_filt;
+	
+	Reso_cat_buffer = sqrt(Reso_cat_buffer);
+	reso_vs_time->SetPoint(point_time_reso,(Time_Crate - 49*365.25*3600*24) /(3600.*24.), Reso_cat_buffer);
+	point_time_reso++;
 	std::cout<< " Max PSD noise : "<< Reso_cat_buffer <<std::endl;		
 	Time_per_voltage = new TH1D ((histname+"_ellapsed_time").c_str(), (histname+"_ellapsed_time").c_str(),1,0.,1. );		
-	Time_per_voltage->SetBinContent(1, Ellapsed_time );	
+	Time_per_voltage->SetBinContent(1, Ellapsed_time);	
 	std::cout<<" Integral for renormalization "<< Time_per_voltage -> Integral() <<std::endl;	
 	Write_histo_tofile(heat, Voltage, Run_name);	
 }
@@ -482,8 +512,7 @@ void Plot_HEnergy_Voltage::Init(){
 	//SetTemp();
 	//SetRunname();	
 	//Cryo_Run Run_317_reso_buffer ("reso_vs_time");
-	point_time_reso = 0 ;
-	reso_vs_time = new TGraph();
+	
 	Open_file(Run_name.c_str());	
 	if(N_partition != 0) {	
 	 if(IS_PROCESSED==0) {	 
@@ -491,7 +520,7 @@ void Plot_HEnergy_Voltage::Init(){
 	}else{
 		Loop_over_Chain_processed();
 	}	
-	Write_timed_reso(("Resolution_timed_"+to_string(heat)+".root").c_str());	
+		
 	}else{	
 		std::cout<<"No partition in the run"<<std::endl;
 	} 
@@ -499,7 +528,12 @@ void Plot_HEnergy_Voltage::Init(){
 
 void Plot_HEnergy_Voltage::Write_timed_reso(const std::string & name_output_reso){
 
+
+	
+	
 	TFile* output = new TFile(name_output_reso.c_str(), "RECREATE");
+	reso_vs_time->SetMarkerStyle(2);
+	reso_vs_time->SetLineWidth(0);
 	reso_vs_time->Write("reso_vs_time");	
 	output->Close();
 	delete output ;

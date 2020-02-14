@@ -44,6 +44,7 @@ class Plot_HEnergy_Voltage {
 		TChain* chain_event_processed ;
 		TChain* chain_voltage_pro ;
 		TChain* chain_event_processed_fast ;
+		TChain* chain_event_Reso_processed ;
 		
 		std::string file_name;
 		std::string list_name;
@@ -105,8 +106,9 @@ class Plot_HEnergy_Voltage {
 		bool local_list;		
 		Double_t chi2_norm[6];
 		Double_t chi2_fast[6];
-		double Time_Crate;		
+		Int_t Time_Crate;		
 		Int_t point_time_reso = 0 ;
+		Double_t reso_eV ;
 		
 		
 	public:
