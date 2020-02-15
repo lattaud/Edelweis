@@ -1,4 +1,4 @@
-BINS = Plot_Energy 
+BINS = Plot
 
 CXX = g++
 CCFLAGS = -O0 -ggdb -std=c++11 
@@ -12,8 +12,7 @@ INCS = $(shell root-config --incdir)
 
 .PHONY: clean rebuild
 
-OBJ = main.o Cryo_Run.o Plot_HEnergy_Voltage.o  
- 
+OBJ = MACRO_PLOTTING.o 
 all: $(BINS) 
 
 $(BINS): $(OBJ) 
