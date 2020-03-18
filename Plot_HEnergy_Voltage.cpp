@@ -170,6 +170,8 @@ void Plot_HEnergy_Voltage::Open_file( const std::string & file_name ){
 		chain_voltage_pro             = new TChain("RunTree_Normal") ;
 		chain_event_processed         = new TChain("EventTree_trig_Normal_filt_decor");
 		chain_event_processed_fast    = new TChain("EventTree_trig_Fast_filt");
+	/*	chain_event_processed_Slow    = new TChain("EventTree_trig_Slow_filt");
+		chain_event_processed_NTD    = new TChain("EventTree_trig_NTD_filt");*/
 	
         	inputListMC_ = file_name;
 		ifstream ismc_2(("List/"+Run_name+"_processed").c_str());
@@ -184,6 +186,8 @@ void Plot_HEnergy_Voltage::Open_file( const std::string & file_name ){
 		        chain_voltage_pro           ->Add(pNamemc);
 		        chain_event_processed       ->Add(pNamemc);
 		        chain_event_processed_fast  ->Add(pNamemc);
+		      /*  chain_event_processed_Slow  ->Add(pNamemc);
+		        chain_event_processed_NTD   ->Add(pNamemc);*/
 		}
 		
 		chain_voltage_pro   	   -> SetBranchAddress ("PSD_Filt",&PDS_noise);
@@ -196,7 +200,9 @@ void Plot_HEnergy_Voltage::Open_file( const std::string & file_name ){
 		chain_event_processed      -> SetBranchAddress ("MicroStp",&micro_step);
 		chain_event_processed      -> SetBranchAddress ("Time_unix",&Time_Crate);		
 		chain_event_processed      -> SetBranchAddress ("chi2_OF_h",&chi2_norm);
-		chain_event_processed_fast -> SetBranchAddress ("chi2_OF_h",&chi2_fast);	
+		chain_event_processed_fast -> SetBranchAddress ("chi2_OF_h",&chi2_fast);
+		/*chain_event_processed_Slow -> SetBranchAddress ("chi2_OF_h",&chi2_Slow);
+		chain_event_processed_NTD -> SetBranchAddress ("chi2_OF_h",&chi2_NTD);	*/
 		cout << "[+] Linking variable... done                           " << endl;
 }
 
@@ -237,9 +243,19 @@ void Plot_HEnergy_Voltage::Write_histo_tofile(float temp, int voltage, const std
 		Time_per_voltage->Write();
 		Ionration_vs_Ei->Write();		
 		Dchi2_vs_Ep_pass->Write();
-		Dchi2_vs_Ep_fail->Write();		
+		Dchi2_vs_Ep_fail->Write();	
+		Dchi2Slow_vs_Ep_pass->Write();
+		Dchi2Slow_vs_Ep_fail->Write();	
+		Dchi2NTD_vs_Ep_pass->Write();
+		Dchi2NTD_vs_Ep_fail->Write();		
 		chi2_cut_vs_Ep_pass->Write();
 		chi2_cut_vs_Ep_fail->Write();
+		G2_Eh_chi2->SetLineWidth(0);
+		G2_Eh_chi2->SetMarkerStyle(8);
+		G2_Eh_chi2->SetMarkerSize(0.5);
+		std::string signTension = "pos";
+		if (voltage < 0.) signTension = "neg";
+		G2_Eh_chi2         ->Write(("Graphchi2vsEP_"+signTension+to_string(fabs(voltage))).c_str());
 		
 	}else{
 	
@@ -311,7 +327,9 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	Double_t itbinchi2 = 0.;
 	for(int bin = 0 ; bin < 10000; bin ++ ){
 			itbinchi2 += 0.1;
-			Binning_chi2[bin] = itbinchi2;		 
+			Binning_chi2[bin] = itbinchi2;		
+			//std::cout<<" bin " <<Nbin<<" chi2 "<<itbinchi2<<std::endl;
+			Nbin++;
 	}	
 	Double_t Binning_Dchi2[100] = {0.} ;	
 	itbinchi2 = -0.05;
@@ -338,12 +356,16 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	binning_vec.clear();	
 	binning_vec.push_back(0.);
 	Double_t iterator_bin = 0 ;
+	int sumbin = 0 ; 
 	do{
 		if(iterator_bin == 0){		
-			 iterator_bin += 0.04;		
+			 iterator_bin += 0.04;	
+			 sumbin++	;
 		}else{
 			Double_t sigma =std::sqrt( std::pow(0.02,2)  + std::pow(0.02*iterator_bin,2));
 			iterator_bin += sigma ;
+			sumbin++;
+		//	std::cout<<"bin "<< sumbin <<" E " << iterator_bin <<std::endl;
 			binning_vec.push_back(iterator_bin);
 		}
 	}while(iterator_bin <= 500);	
@@ -375,7 +397,9 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	H_Ehee        = new TH1D((histname_ee).c_str(), (histname_ee).c_str(),375, 0.,15.);	
 	H_Ehee        ->SetBins((int) binning_vec_kevee.size()-1, Binning_keVee) ; 	
 	H2_Eh_chi2    = new TH2D((histname+"_vs_chi2").c_str(), (histname+"_vs_chi2").c_str(),750, 0.,300.,100,0.,1500.); 
-	H2_Eh_chi2    -> SetBins((int)binning_vec.size() -1, Binning_keV , 9999, Binning_chi2);	
+	H2_Eh_chi2    -> SetBins((int)binning_vec.size() -1, Binning_keV , 9999, Binning_chi2);
+	G2_Eh_chi2    = new TGraph();
+	int Ngraph_point = 0 ;	
 	Double_t ratio_binninh [100] = {0};	
 	iterator_bin = 0 ;
 	for( int i = 0 ; i < 100 ; i++){	
@@ -387,13 +411,23 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	Dchi2_vs_Ep_pass    = new TH2D((histname+"_vs_Dchi2_pass").c_str(), (histname+"_vs_Dchi2_pass").c_str(),750, 0.,300.,100,0.,1500.);
 	Dchi2_vs_Ep_pass    -> SetBins((int)binning_vec.size() -1, Binning_keV , 99, Binning_Dchi2);	
 	Dchi2_vs_Ep_fail    = new TH2D((histname+"_vs_Dchi2_fail").c_str(), (histname+"_vs_Dchi2_fail").c_str(),750, 0.,300.,100,0.,1500.);
-	Dchi2_vs_Ep_fail    -> SetBins((int)binning_vec.size() -1, Binning_keV , 99, Binning_Dchi2);		
+	Dchi2_vs_Ep_fail    -> SetBins((int)binning_vec.size() -1, Binning_keV , 99, Binning_Dchi2);	
+	Dchi2Slow_vs_Ep_pass    = new TH2D((histname+"_vs_Dchi2Slow_pass").c_str(), (histname+"_vs_Dchi2Slow_pass").c_str(),750, 0.,300.,100,0.,1500.);
+	Dchi2Slow_vs_Ep_pass    -> SetBins((int)binning_vec.size() -1, Binning_keV , 99, Binning_Dchi2);	
+	Dchi2Slow_vs_Ep_fail    = new TH2D((histname+"_vs_Dchi2Slow_fail").c_str(), (histname+"_vs_Dchi2Slow_fail").c_str(),750, 0.,300.,100,0.,1500.);
+	Dchi2Slow_vs_Ep_fail    -> SetBins((int)binning_vec.size() -1, Binning_keV , 99, Binning_Dchi2);	
+	Dchi2NTD_vs_Ep_pass    = new TH2D((histname+"_vs_Dchi2NTD_pass").c_str(), (histname+"_vs_Dchi2NTD_pass").c_str(),750, 0.,300.,100,0.,1500.);
+	Dchi2NTD_vs_Ep_pass    -> SetBins((int)binning_vec.size() -1, Binning_keV , 99, Binning_Dchi2);	
+	Dchi2NTD_vs_Ep_fail    = new TH2D((histname+"_vs_Dchi2NTD_fail").c_str(), (histname+"_vs_Dchi2NTD_fail").c_str(),750, 0.,300.,100,0.,1500.);
+	Dchi2NTD_vs_Ep_fail    -> SetBins((int)binning_vec.size() -1, Binning_keV , 99, Binning_Dchi2);		
 	chi2_cut_vs_Ep_pass = new TH2D((histname+"_vs_chi2_pass").c_str(), (histname+"_vs_chi2_pass").c_str(),750, 0.,300.,100,0.,1500.);
 	chi2_cut_vs_Ep_pass -> SetBins((int)binning_vec.size() -1, Binning_keV , 9999, Binning_chi2);
 	chi2_cut_vs_Ep_fail = new TH2D((histname+"_vs_chi2_fail").c_str(), (histname+"_vs_chi2_fail").c_str(),750, 0.,300.,100,0.,1500.);
 	chi2_cut_vs_Ep_fail -> SetBins((int)binning_vec.size() -1, Binning_keV , 9999, Binning_chi2);	
 	Reso_cat_buffer = 0 ; 	
 	int rejected_dchi2 = 0;
+	int rejected_dchi2slow = 0;
+	int rejected_dchi2NTD = 0;
 	
 // Loop on both processed and calib , apply quality cuts
 	for(int it = 0; it < Nb_HeatEnergy; it++ /*,point_time_reso++ */ ){		
@@ -403,14 +437,15 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 		chain_event_processed_fast ->GetEntry(it);
 				
 		Double_t Ep = Eh * (1 + (fabs(Voltage)/3.));
-		H2_Eh_chi2->Fill(Ep,(chi2_A/1024.), 1./EpBinIndex(Ep, binning_vec));		
-
+		H2_Eh_chi2->Fill(Ep,(chi2_norm[0]/1024.), 1./EpBinIndex(Ep, binning_vec));		
+      G2_Eh_chi2->SetPoint(Ngraph_point, Ep,(chi2_A/1024.));
+      Ngraph_point++;
 		//reso_vs_time->SetPoint(point_time_reso,(Time_Crate - 49*365.25*3600*24) /(3600.*24.), Reso_cat);
 		
 		
 		//chi2 cut
-		if((chi2_A/1024.) > (1.15 + 100 * TMath::Power(fabs(Ep)/300. , 3.)) ){			 
-			 chi2_cut_vs_Ep_fail-> Fill(Ep, (chi2_A/1024.), 1./EpBinIndex(Ep, binning_vec));
+		if((chi2_norm[0]/1024.) > (1.15 + 100 * TMath::Power(fabs(Ep)/300. , 3.)) ){			 
+			 chi2_cut_vs_Ep_fail-> Fill(Ep, (chi2_norm[0]/1024.), 1./EpBinIndex(Ep, binning_vec));
 			 continue ;			 
 		}
 		chi2_cut_vs_Ep_pass -> Fill(Ep, (chi2_A/1024.), 1./EpBinIndex(Ep, binning_vec));		
@@ -420,14 +455,29 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 			rejected_dchi2++;
 			continue;
 		}
+		
+	/*	if((chi2_norm[0]/1024.) - (chi2_Slow[0]/1024.) > 0.001){			
+			Dchi2Slow_vs_Ep_fail -> Fill(Ep, (chi2_norm[0]/1024.) - (chi2_Slow[0]/1024.), 1./EpBinIndex(Ep, binning_vec));
+			rejected_dchi2slow++;
+			continue;
+		}
+		
+		if((chi2_norm[0]/1024.) - (chi2_NTD[0]/1024.) > 0.001){			
+			Dchi2NTD_vs_Ep_fail -> Fill(Ep, (chi2_norm[0]/1024.) - (chi2_NTD[0]/1024.), 1./EpBinIndex(Ep, binning_vec));
+			rejected_dchi2NTD++;
+			continue;
+		}*/
+		
 		Reso_cat_buffer += Reso_cat; 
 		Dchi2_vs_Ep_pass -> Fill(Ep, (chi2_norm[0]/1024.) - (chi2_fast[0]/1024.), 1./EpBinIndex(Ep, binning_vec));
+	//	Dchi2Slow_vs_Ep_pass -> Fill(Ep, (chi2_norm[0]/1024.) - (chi2_Slow[0]/1024.), 1./EpBinIndex(Ep, binning_vec));
+	//	Dchi2NTD_vs_Ep_pass -> Fill(Ep, (chi2_norm[0]/1024.) - (chi2_NTD[0]/1024.), 1./EpBinIndex(Ep, binning_vec));
 		H_Ehee           -> Fill(Eh, 1./EpBinIndex(Eh, binning_vec_kevee));
 		H_Eh             -> Fill(Ep, 1./EpBinIndex(Ep, binning_vec) );
 		H_Eh_lowres      -> Fill(Ep, 1./EpBinIndex(Ep, binning_vec_low_res) );
 		Ionration_vs_Ei  -> Fill(fabs(Ei) , Eh / fabs(Ei) , 1./EpBinIndex(fabs(Ei), binning_vec_kevee));	
 	} 	
-	std::cout<<" delta chi2 rejected "<<rejected_dchi2<<std::endl;
+	//std::cout<<" delta chi2 rejected "<<rejected_dchi2<<" delta chi2 Slow rejected "<<rejected_dchi2slow<<" delta chi2 NTD rejected "<<rejected_dchi2NTD<<std::endl;
 	Reso_cat_buffer = Reso_cat_buffer/Nb_HeatEnergy;
 	Double_t psd_freq [15] = {0.};
 	Double_t psd_filt [15] = {0.};
