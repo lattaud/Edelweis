@@ -56,8 +56,24 @@ void Make_Nice_Hist(TH1D* hist , Double_t tension, Double_t norm, std::string xa
 		hist->GetXaxis()->SetRangeUser(10,10000000);
 	}
 	hist->SetTitle("");
-	//std::cout<<" Integral hist "<<hist->Integral()<<std::endl;
+	
+	
+	
 
+}
+void Fit_and_store_HO(TH1D* hist){
+      
+      TF1 * exp_to_fit= new TF1("HO_fit","[0]*exp(-x*[1])",0.,10);   
+    //  exp_to_fit->SetParameter(0,8000);
+    //  exp_to_fit->SetParameter(1,10);
+      hist-> Fit(exp_to_fit,"","",0.35,0.9);
+      
+      TFile* output = new TFile("Output_HOFit.root","RECREATE");
+      hist->Write();
+      exp_to_fit->Write();
+      output->Close();
+      
+      
 }
 
 void Make_Nice_Hist_time(TH1D* hist , Double_t tension, Double_t norm, std::string xaxisname, int rebin,int n){
@@ -192,7 +208,7 @@ void Launch_plotting(std::string  Input_file, std::string Temp, std::string List
 		Make_Nice_Hist(Hist_vec [i], Tension [i], Norm_Tension [i], " E_{phonon} (keV)", 0);
 		Make_Nice_Hist(Hist_vec_kee [i], Tension [i], Norm_Tension [i], " E_{heat} (keVee)",0);
 		leg->AddEntry(Hist_vec [i],(to_string(int (Tension [i]))+"V ;"+to_string(int(Norm_Tension [i]/(3600.*24.)))+" days").c_str(),"l");
-		
+		if(namehist.Contains("Ephonon_pos15.000000_22.000000mk", TString::kIgnoreCase) == 1) Fit_and_store_HO(Hist_vec [i]);
 	}
 	
 
@@ -323,14 +339,14 @@ void Launch_plotting(std::string  Input_file, std::string Temp, std::string List
 void Launch_plotting_list(std::string  Input_list, std::string Temp, std::string List_ofrunandtension , std::string resoCAT,std::string plotlimit){
 
         std::string name_plot = "Plot_output/Eh_vs_V_"+Temp+"mk_TIME"+resoCAT+".pdf" ;
-	std::string name_plotneg = "Plot_output/Eh_kee_vs_V_"+Temp+"mk_TIME"+resoCAT+".pdf" ;
+	     std::string name_plotneg = "Plot_output/Eh_kee_vs_V_"+Temp+"mk_TIME"+resoCAT+".pdf" ;
 	
 	
 	TCanvas *c = new TCanvas("c","c",800,800);    
 
         
         
-         c->cd();
+   c->cd();
 	c->SetLogy();
 	c->SetLogx();
 	c->SetGridx();
@@ -474,6 +490,38 @@ void Launch_plotting_list(std::string  Input_list, std::string Temp, std::string
 
 }
 
+void Study_rate_HO(std::string list_file, std::string temp, double Volt){
+   
+      ifstream List_file(list_file.c_str(),ios::in);
+      std::string Input_file;
+      TString buffer ;   
+	   int nline = 0 ; 
+      while(std::getline(List_file, Input_file)){
+         buffer = Input_file ;
+         if(buffer.Contains("#", TString::kIgnoreCase))continue;
+         TFile* file = TFile::Open(Input_file.c_str());
+         TH2D * h2_chi2_E = (TH2D*) file->Get(("Ephonon_pos"+to_string(Volt)+"_22.000000mk_vs_chi2").c_str());
+         TH1D * h1_time_norm = (TH1D*) file->Get(("Ephonon_pos"+to_string(Volt)+"_22.000000mk_ellapsed_time").c_str());
+         h2_chi2_E->Scale(1./(((h1_time_norm->Integral()/(3600.*24.)))* 0.03));
+         std::cout<<"zone A Run "<< Input_file<<" Rate  "<< h2_chi2_E->Integral(104,151,99,3999)<<std::endl;
+         
+         std::cout<<"zone B Run "<< Input_file<<" Rate "<< h2_chi2_E->Integral(104,151,999,9999)<<std::endl;
+         
+         std::cout<<"zone C Run "<< Input_file<<" Rate "<< h2_chi2_E->Integral(219,249,199,999)<<std::endl;
+         
+         std::cout<<"zone Analysis Run "<< Input_file<<" Rate  "<< h2_chi2_E->Integral(14,37,4,12)<<std::endl;
+                  
+      }
+        
+       
+       
+
+
+
+
+}
+
+
 
 int main(int argc, char** argv) {
 
@@ -484,9 +532,15 @@ int main(int argc, char** argv) {
         
                 std::cout<<"test "<<argv[6]<<std::endl;
                 Launch_plotting_list(argv[7], argv[2], argv[3], argv[4],argv[5]);
-        }else{
+        }else if (arg ==  "Spectrum"){
+           std::cout<<"test "<<std::endl;
 	        Launch_plotting(argv[1], argv[2], argv[3], argv[4],argv[5]);
+	}else{
+	      
+	      Study_rate_HO(argv[7],argv[2],stod(argv[6]));
+	
 	}
+	
 	std::cout<<" Ending Routine "<<std::endl;
 	return 0;	 
 }
