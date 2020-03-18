@@ -1,5 +1,4 @@
-BINS = Plot
-
+BINS = Plot 
 CXX = g++
 CCFLAGS = -O0 -ggdb -std=c++11 
 
@@ -17,7 +16,7 @@ all: $(BINS)
 
 $(BINS): $(OBJ) 
 	$(CXX) $^ -o $(BINS) $(CCFLAGS) $(shell root-config --libs) -lMLP  -lTreePlayer  -lXMLIO  -lMLP -lm -g
-
+	
 
 %.o: %.cpp
 	$(CXX) $(CCFLAGS) $^ -c -o $@  $(addprefix -I, $(INCS))
