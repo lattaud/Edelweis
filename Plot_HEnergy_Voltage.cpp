@@ -359,16 +359,16 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	int sumbin = 0 ; 
 	do{
 		if(iterator_bin == 0){		
-			 iterator_bin += 0.04;	
+			 iterator_bin += 40.;	
 			 sumbin++	;
 		}else{
-			Double_t sigma =std::sqrt( std::pow(0.02,2)  + std::pow(0.02*iterator_bin,2));
+			Double_t sigma =std::sqrt( std::pow(20.,2)  + std::pow(0.02*iterator_bin,2));
 			iterator_bin += sigma ;
 			sumbin++;
 		//	std::cout<<"bin "<< sumbin <<" E " << iterator_bin <<std::endl;
 			binning_vec.push_back(iterator_bin);
 		}
-	}while(iterator_bin <= 500);	
+	}while(iterator_bin <= 500000);	
 	Double_t Binning_keV[binning_vec.size()];	
 	for(int it = 0 ; it < binning_vec.size() ; it ++){	
 		Binning_keV [it] = binning_vec.at(it);	
@@ -378,14 +378,14 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	iterator_bin = 0 ;
 	do{
 		if(iterator_bin == 0){		
-			 iterator_bin += 0.04;		
+			 iterator_bin += 40.;		
 		}else{
-			Double_t sigma =std::sqrt( std::pow(0.04,2)  + std::pow(0.05*iterator_bin,2));
+			Double_t sigma =std::sqrt( std::pow(40.,2)  + std::pow(0.05*iterator_bin,2));
 			iterator_bin += sigma ;
 			binning_vec_low_res.push_back(iterator_bin);
 		}
 
-	}while(iterator_bin < 500);	
+	}while(iterator_bin < 500000);	
 	Double_t Binning_keVlow[binning_vec.size()];	
 	for(unsigned int it = 0 ; it < binning_vec_low_res.size() ; it ++){	
 		Binning_keVlow [it] = binning_vec_low_res.at(it);	
@@ -404,7 +404,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	iterator_bin = 0 ;
 	for( int i = 0 ; i < 100 ; i++){	
 	 	ratio_binninh [i] = iterator_bin ;	 	
-		iterator_bin += 0.02 ;
+		iterator_bin += 20. ;
 	}	
 	Ionration_vs_Ei     = new TH2D((histname_calib).c_str(), (histname_calib).c_str(),750, 0.,300.,100,0.,1500.);
 	Ionration_vs_Ei     -> SetBins((int) binning_vec_kevee.size()-1,Binning_keVee,99 , ratio_binninh );	
@@ -436,7 +436,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 		chain_event_processed      ->GetEntry(it);
 		chain_event_processed_fast ->GetEntry(it);
 				
-		Double_t Ep = Eh * (1 + (fabs(Voltage)/3.));
+		Double_t Ep = Eh*1000. * (1 + (fabs(Voltage)/3.));
 		H2_Eh_chi2->Fill(Ep,(chi2_norm[0]/1024.), 1./EpBinIndex(Ep, binning_vec));		
       G2_Eh_chi2->SetPoint(Ngraph_point, Ep,(chi2_A/1024.));
       Ngraph_point++;
@@ -472,10 +472,10 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 		Dchi2_vs_Ep_pass -> Fill(Ep, (chi2_norm[0]/1024.) - (chi2_fast[0]/1024.), 1./EpBinIndex(Ep, binning_vec));
 	//	Dchi2Slow_vs_Ep_pass -> Fill(Ep, (chi2_norm[0]/1024.) - (chi2_Slow[0]/1024.), 1./EpBinIndex(Ep, binning_vec));
 	//	Dchi2NTD_vs_Ep_pass -> Fill(Ep, (chi2_norm[0]/1024.) - (chi2_NTD[0]/1024.), 1./EpBinIndex(Ep, binning_vec));
-		H_Ehee           -> Fill(Eh, 1./EpBinIndex(Eh, binning_vec_kevee));
+		H_Ehee           -> Fill(Eh*1000., 1./EpBinIndex(Eh*1000., binning_vec_kevee));
 		H_Eh             -> Fill(Ep, 1./EpBinIndex(Ep, binning_vec) );
 		H_Eh_lowres      -> Fill(Ep, 1./EpBinIndex(Ep, binning_vec_low_res) );
-		Ionration_vs_Ei  -> Fill(fabs(Ei) , Eh / fabs(Ei) , 1./EpBinIndex(fabs(Ei), binning_vec_kevee));	
+		Ionration_vs_Ei  -> Fill(fabs(Ei) , Eh*1000. / fabs(Ei) , 1./EpBinIndex(fabs(Ei), binning_vec_kevee));	
 	} 	
 	//std::cout<<" delta chi2 rejected "<<rejected_dchi2<<" delta chi2 Slow rejected "<<rejected_dchi2slow<<" delta chi2 NTD rejected "<<rejected_dchi2NTD<<std::endl;
 	Reso_cat_buffer = Reso_cat_buffer/Nb_HeatEnergy;
