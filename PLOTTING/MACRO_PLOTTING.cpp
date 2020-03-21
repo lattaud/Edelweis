@@ -47,7 +47,7 @@ void Make_Nice_Hist(TH1D* hist , Double_t tension, Double_t norm, std::string xa
 	hist->SetLineWidth(1);
 	hist->GetXaxis()->SetTitle(xaxisname.c_str());
 	hist->GetXaxis()->SetTitleOffset(1.25);
-	hist->GetYaxis()->SetTitle("NEvent.keV ^{-1}.day^{-1}.kg^{-1}");
+	hist->GetYaxis()->SetTitle("NEvent.eV ^{-1}.day^{-1}.kg^{-1}");
 	hist->GetYaxis()->SetTitleOffset(1.3);
 	//hist->GetYaxis()->SetRangeUser(10,10000000);
 	if (rebin == 1 ){
@@ -63,10 +63,13 @@ void Make_Nice_Hist(TH1D* hist , Double_t tension, Double_t norm, std::string xa
 }
 void Fit_and_store_HO(TH1D* hist){
       
-      TF1 * exp_to_fit= new TF1("HO_fit","[0]*exp(-x*[1])",0.,10);   
-    //  exp_to_fit->SetParameter(0,8000);
-    //  exp_to_fit->SetParameter(1,10);
-      hist-> Fit(exp_to_fit,"","",0.35,0.9);
+      TF1 * exp_to_fit= new TF1("HO_fit","[0]*([1]*TMath::Exp(-x/[2])+[3]*TMath::Exp(-x/[4]))"/*"[0]*exp(-x*[1])"*/,10,10000);   
+      exp_to_fit->SetParameter(0,1.);
+      exp_to_fit->SetParameter(1,906897);
+      exp_to_fit->SetParameter(2,39.2);
+      exp_to_fit->SetParameter(3,47765);
+      exp_to_fit->SetParameter(4,202.607);
+      hist-> Fit(exp_to_fit,"","",350.,900.);
       
       TFile* output = new TFile("Output_HOFit.root","RECREATE");
       hist->Write();
@@ -301,7 +304,7 @@ void Launch_plotting(std::string  Input_file, std::string Temp, std::string List
 
 	
 	
-	TCanvas *cc = new TCanvas("cc","cc",800,800);    
+	/*TCanvas *cc = new TCanvas("cc","cc",800,800);    
 	cc->SetLogy();
 	cc->SetLogx();
 	
@@ -329,7 +332,7 @@ void Launch_plotting(std::string  Input_file, std::string Temp, std::string List
 	}
 	leg->Draw();
 	std::string name_plotneg = "Plot_output/Eh_kee_vs_V_"+Temp+"mk_normalized"+resoCAT+".pdf" ;
-	cc->SaveAs(name_plotneg.c_str());
+	cc->SaveAs(name_plotneg.c_str());*/
 	
 	
 
