@@ -7,7 +7,7 @@ int main(int argc, char** argv) {
 
 
 	
-	Plot_HEnergy_Voltage * Test_obj = new  Plot_HEnergy_Voltage(argv[1], std::atof(argv[2]), std::stoi(argv[3]), std::stoi(argv[4]), argv[5], std::stoi(argv[6]) ); 
+	Plot_HEnergy_Voltage * Test_obj = new  Plot_HEnergy_Voltage(argv[1], std::atof(argv[2]), std::stoi(argv[3]), std::stoi(argv[4]), argv[5], std::stoi(argv[6]),  argv[7]); 
 	
 	delete Test_obj ;
 	
