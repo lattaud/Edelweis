@@ -5,7 +5,7 @@
 using namespace std;
 
 Histo_reader_from_rootfile::Histo_reader_from_rootfile( const std::string file_list, const std::string &list_histo , const std::string detector, const std::string outputname, bool verbosity, bool runontree, double voltage_user, std::string run_arg )	{
-        Vec_hist_name.clear();
+    Vec_hist_name.clear();
 	Vec_paramam_vs_time_lowE.clear() ;   
 	Vec_paramam_vs_time_HightE.clear() ;                      
 	Vec_Histo_to_fit.clear();
@@ -27,7 +27,8 @@ Histo_reader_from_rootfile::Histo_reader_from_rootfile( const std::string file_l
 	std::string type_to_extract = "TH1D" ;
 	Open_and_store_from_list(list_histo, type_to_extract.c_str() );
 	type_to_extract = "TFile";
-	Open_and_store_from_list(file_list , type_to_extract.c_str());		
+	//Open_and_store_from_list(file_list , type_to_extract.c_str());//Old method
+	Open_inputfile(file_list);		
 	Get_histo_from_File();
 	std::vector<double> data_to_smooth =  Fill_data_array_vec("Ep");
 	std::vector<double> data_weight    =  Fill_data_array_vec("weight");
@@ -120,6 +121,21 @@ void Histo_reader_from_rootfile::Open_and_store_from_list(const std::string &lis
 	
 }
 
+void Histo_reader_from_rootfile::Open_inputfile(std::string const & name){
+
+    TFile * temp_file = new TFile(Form("%s",name.c_str()));
+	Input_file = temp_file;
+	std::cout<<Input_file->GetName()<<std::endl;
+	event_tree = (TTree*)Input_file->Get("selected_events");
+	event_tree->SetBranchAddress("Eh",&E_h);
+	event_tree->SetBranchAddress("Ep",&E_p);
+	event_tree->SetBranchAddress("voltage",&voltage);
+	event_tree->SetBranchAddress("weight",&weight);
+	TParameter<double> * ellapsed_time = (TParameter<double>*)Input_file->Get(Form("timed_lenght_pos%2.0fV",Voltage_user));
+	Time_exposition = ellapsed_time->GetVal() ;
+	TH1D * timed_Hist = (TH1D*)Input_file->Get(Form("Ephonon_pos%2.0f_ellapsed_time",Voltage_user));
+	std::cout<<" time from  hist "<<timed_Hist->Integral() / (24.*3600.)<<" time from parameter "<< Time_exposition <<std::endl;
+}
 
 
 void Histo_reader_from_rootfile::Store_to_output(){
@@ -190,7 +206,7 @@ void Histo_reader_from_rootfile::smooth_spectrums( double* data,  double* weight
 
 
 void Histo_reader_from_rootfile::smooth_spectrums( std::vector<double>  data,  std::vector<double>  weight){
-      if(IsVerbose) std::cout<< " smoothing spectrum  by TKDE"<<std::endl;
+        if(IsVerbose) std::cout<< " smoothing spectrum  by TKDE"<<std::endl;
         double rho = 10.0; //default value
         unsigned int N_data = event_tree -> GetEntries();
         TKDE * kde = new TKDE(N_data, &data[0], 0.01,500., "", rho);
@@ -245,25 +261,9 @@ double Histo_reader_from_rootfile::Optimise_smoothing( std::vector<double>  data
       int color = 1 ;
       std::multimap<double, double> MAP_rho_chi2;
       
-      /*for(double iter = 0.1; iter < 3. ;  iter+= 0.3 ){  
-            unsigned int N_data = event_tree -> GetEntries();
-            TKDE * kde = new TKDE(N_data, &data[0], 0.01,15., "", iter);            
-            TH1D* hist_kernel =(TH1D*) kde->GetFunction(100000)->GetHistogram();
-            hist_kernel->Scale(1./hist_kernel->Integral("WIDTH"));
-            hist_kernel->Scale(Histo_from_tree->Integral("WIDTH"));
-            hist_kernel->SetFillStyle(0);           
-            hist_kernel->SetLineColor(color); 
-            color++;                       
-            hist_kernel->Draw("HISTSAME");
-            string detector = Detector ;             
-            if(IsVerbose) std::cout<< " smoothing spectrum  by smooth from TH1"<<std::endl;          
-            // std::cout<<" chi2 /ndof "<<calculatechi2(Histo_from_tree,hist_kernel,0.08,1.5)  <<std::endl;
-            leg->AddEntry(hist_kernel,Form("KDE rho=%1.2f #chi^{2} / ndof=%2.2f ",iter,calculatechi2(Histo_from_tree,hist_kernel,0.1,2.)),"l");
-            MAP_rho_chi2.insert(std::make_pair(calculatechi2(Histo_from_tree,hist_kernel,0.1,2.),iter)); 
-            std::cout<<" chi  "<<calculatechi2(Histo_from_tree,hist_kernel,0.1,2.) <<" rho "<<  iter <<std::endl;   
-        }*/
         double chi2buffer = 0.;
         double iter = 0.5 ;
+        int Nloop = 0.;
         do{
             unsigned int N_data = event_tree -> GetEntries();
             TKDE * kde = new TKDE(N_data, &data[0], 0.01,15., "", iter);            
@@ -277,11 +277,12 @@ double Histo_reader_from_rootfile::Optimise_smoothing( std::vector<double>  data
             string detector = Detector ;             
             if(IsVerbose) std::cout<< " smoothing spectrum  by smooth from TH1"<<std::endl;          
             // std::cout<<" chi2 /ndof "<<calculatechi2(Histo_from_tree,hist_kernel,0.08,1.5)  <<std::endl;
-            leg->AddEntry(hist_kernel,Form("KDE rho=%1.2f #chi^{2} / ndof=%2.2f ",iter,calculatechi2(Histo_from_tree,hist_kernel,0.1,5.)),"l");
-            MAP_rho_chi2.insert(std::make_pair(calculatechi2(Histo_from_tree,hist_kernel,0.1,5.),iter)); 
-            std::cout<<" chi  "<<calculatechi2(Histo_from_tree,hist_kernel,0.1,5.) <<" rho "<<  iter <<std::endl;
-            chi2buffer= calculatechi2(Histo_from_tree,hist_kernel,0.1,5.);
+            leg->AddEntry(hist_kernel,Form("KDE rho=%1.2f #chi^{2} / ndof=%2.2f ",iter,calculatechi2(Histo_from_tree,hist_kernel,0.5,10.)),"l");
+            MAP_rho_chi2.insert(std::make_pair(calculatechi2(Histo_from_tree,hist_kernel,0.5,10.),iter)); 
+            if(IsVerbose || Nloop % 10 == 0)std::cout<<" chi  "<<calculatechi2(Histo_from_tree,hist_kernel,0.5,10.) <<" rho "<<  iter <<std::endl;
+            chi2buffer= calculatechi2(Histo_from_tree,hist_kernel,0.5,10.);
             iter+=0.1;
+            Nloop++;
         
         }while(chi2buffer < 1.1);
         
@@ -357,9 +358,11 @@ double Histo_reader_from_rootfile::calculatechi2(TH1D *hdata,TH1* hkde,double em
      int binend=hdata->FindBin(emax);
      int ntotbinshist=hdata->GetNbinsX();
      if(binend>ntotbinshist){binend=ntotbinshist;}
-     cout<<"emin ="<<emin<<" bin = "<<binstart<<endl;
-     cout<<"emax ="<<emax<<"    bin = "<<binend<<endl;
-     cout<<"Nbinsmax ="<<hdata->GetNbinsX()<<endl;
+     if(IsVerbose){
+        cout<<"emin ="<<emin<<" bin = "<<binstart<<endl;
+        cout<<"emax ="<<emax<<"    bin = "<<binend<<endl;
+        cout<<"Nbinsmax ="<<hdata->GetNbinsX()<<endl;
+     }
 
      double chi2=0;
      int ndf=0;
@@ -387,7 +390,7 @@ expected+=hkde->GetBinContent(hkde->FindBin(emoy))/(double)Nint;
          ndf++;
          }
      }
-     cout<<chi2<<"    "<<ndf<<" "<<chi2/ndf<<endl;
+     if(IsVerbose) cout<<chi2<<"    "<<ndf<<" "<<chi2/ndf<<endl;
      //for(int bin=)
 
      return chi2/ndf;
@@ -396,7 +399,7 @@ expected+=hkde->GetBinContent(hkde->FindBin(emoy))/(double)Nint;
 
 int main(int argc, char** argv){  
    TCLAP::CmdLine cmd("Fitting bkg in time", ' ', "0.1");
-   TCLAP::ValueArg<std::string> inputfileList("", "inputfile-list", "Text file containing input files", true, "", "string",cmd);
+   TCLAP::ValueArg<std::string> inputfileList("", "inputfile", " input file", true, "", "string",cmd);
    TCLAP::ValueArg<std::string> inputplotList("", "inputplot-list", "Text file containing input files", true, "", "string",cmd);
    TCLAP::ValueArg<std::string> Detector_name("d", "detector", "Which detector", true, "", "string", cmd);
    TCLAP::ValueArg<std::string> Output_name  ("o", "output-name", "Output name", true, "", "string", cmd);

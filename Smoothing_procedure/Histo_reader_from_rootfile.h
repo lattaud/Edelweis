@@ -48,9 +48,10 @@ class Histo_reader_from_rootfile {
 		std::vector<double>  Fill_data_array_vec(std::string name_variable);
 		void smooth_spectrums( double* data,  double* weight);
 		void smooth_spectrums( std::vector<double>  data,  std::vector<double>  weight);
-      double Optimise_smoothing( std::vector<double>  data);		
+        double Optimise_smoothing( std::vector<double>  data);		
 		double calculatechi2(TH1D *hdata,TH1* hkde,double emin,double emax);//courtoisie de Quentin
 		int color_rainbow(int i,int nbval);
+		void Open_inputfile(std::string const & name);
 	private: 
 	
 		TFile *                  Input_file;
