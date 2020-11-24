@@ -1,0 +1,267 @@
+ opening list : list_hist
+ opening list : list_file
+../Testing_renormed_NbSi209/fevrier.root
+ getting  histo Ephonon_pos51_20.000000mk_tot integral histo 2.5093e+06
+ 
+ Storing data to array  
+ Storing data to array  
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+3008.42    57 52.7792
+ chi2 /ndof 52.7792
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+3896    57 68.3508
+ chi2 /ndof 68.3508
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+5078.4    57 89.0947
+ chi2 /ndof 89.0947
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+6357.55    57 111.536
+ chi2 /ndof 111.536
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+7320.69    57 128.433
+ chi2 /ndof 128.433
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+7957.69    57 139.609
+ chi2 /ndof 139.609
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+8322.62    57 146.011
+ chi2 /ndof 146.011
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+8474.8    57 148.681
+ chi2 /ndof 148.681
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+8469.88    57 148.594
+ chi2 /ndof 148.594
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+8354.5    57 146.57
+ chi2 /ndof 146.57
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+8167.36    57 143.287
+ chi2 /ndof 143.287
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+7944.09    57 139.37
+ chi2 /ndof 139.37
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+7721.99    57 135.473
+ chi2 /ndof 135.473
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+7543.15    57 132.336
+ chi2 /ndof 132.336
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+7455.96    57 130.806
+ chi2 /ndof 130.806
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+7515.74    57 131.855
+ chi2 /ndof 131.855
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+7785.14    57 136.581
+ chi2 /ndof 136.581
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+8334.52    57 146.22
+ chi2 /ndof 146.22
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+9242.27    57 162.145
+ chi2 /ndof 162.145
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+10594.8    57 185.873
+ chi2 /ndof 185.873
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+12485.7    57 219.047
+ chi2 /ndof 219.047
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+15014.5    57 263.412
+ chi2 /ndof 263.412
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+18284.1    57 320.774
+ chi2 /ndof 320.774
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+22398.1    57 392.949
+ chi2 /ndof 392.949
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+27457.1    57 481.704
+ chi2 /ndof 481.704
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+33555.6    57 588.696
+ chi2 /ndof 588.696
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+40778.5    57 715.413
+ chi2 /ndof 715.413
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+49198.5    57 863.131
+ chi2 /ndof 863.131
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+58874    57 1032.88
+ chi2 /ndof 1032.88
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+69848.2    57 1225.41
+ chi2 /ndof 1225.41
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+82148.4    57 1441.2
+ chi2 /ndof 1441.2
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+95786.4    57 1680.46
+ chi2 /ndof 1680.46
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+110760    57 1943.16
+ chi2 /ndof 1943.16
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+127054    57 2229.03
+ chi2 /ndof 2229.03
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+144644    57 2537.61
+ chi2 /ndof 2537.61
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+163493    57 2868.29
+ chi2 /ndof 2868.29
+ smoothing spectrum  by TKDE
+ smoothing spectrum  by smooth from TH1
+emin =0.08 bin = 2
+emax =1.5    bin = 59
+Nbinsmax =347
+183561    57 3220.36
+ chi2 /ndof 3220.36
+ smoothing spectrum  by TKDE

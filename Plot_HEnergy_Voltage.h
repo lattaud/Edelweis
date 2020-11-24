@@ -32,7 +32,7 @@
 #include "TDirectory.h"
 #include "TGraphErrors.h"
 #include "TParameter.h"
-#include "Cryo_Run.h"
+#include "Smoothing_procedure/tclap/CmdLine.h"
 
 class Plot_HEnergy_Voltage {
 
@@ -53,25 +53,51 @@ class Plot_HEnergy_Voltage {
 		std::string Run_name;
 		std::string Run_name_forlist;
 		std::string OutputDir;
+		std::string Detector;
 		TFile* Input_Files;
 		TFile* Output_Files;
 		
 		Double_t Voltage;
 		Int_t    Index_Calib;
 		Double_t Eh;
+		Double_t EhA;
+		Double_t EhB;
 		Double_t chi2_A; 
-		Double_t Ei;
+		Double_t EiA;
+		Double_t EiB;
 		Int_t Nb_voltage;
 		Int_t Nb_index;
 		Int_t Nb_HeatEnergy;
 		Int_t Nb_chi2;
 		
+		TTree *outTree_ ;
+		TParameter <double> * time_lengh ; 
+		Double_t E_h_buf;
+		Double_t E_p_buf;
+		Double_t weight;
+		Double_t voltage;
+		std::vector<Double_t> *chi2_buf;
 		
 		
 		
 		TH1D * H_Eh;
+		TH1D * H_EhB;
+		TH1D * H_Ehtot;
+		TH1D * H_EiA;
+		TH1D * H_EiB;
+		TH1D * H_EiFid;
 		TH1D * H_Eh_lowres;
 		TH1D * H_Ehee;
+		TH1D * H_EhBee;
+		TH1D * H_Ehtotee;
+		
+		TH1D * H_Eh_noweight;
+		TH1D * H_EhB_noweight;
+		TH1D * H_Ehtot_noweight;
+		TH1D * H_Ehee_noweight;
+		TH1D * H_EhBee_noweight;
+		TH1D * H_Ehtotee_noweight;
+		
 		TH2D * H2_Eh_chi2;
 		TGraph * G2_Eh_chi2;
 		TH1D * Time_per_voltage;
@@ -84,13 +110,21 @@ class Plot_HEnergy_Voltage {
 		TH2D * Dchi2NTD_vs_Ep_fail;		
 		TH2D * chi2_cut_vs_Ep_pass;
 		TH2D * chi2_cut_vs_Ep_fail;
+		//TH2D * chi2ion_cut_vs_Ep_fail;
+		TH2D * H2_Ei_chi2;
 		
 				
-		TGraph * reso_vs_time;		
+		TGraph * reso_vs_time;
+		TGraph * EiFid_vs_Eh_passcut;
+		TGraph * EiFid_vs_Eh_rejected;
+		
+		TGraph * EiFid_vs_chi2_passcut;
+		TGraph * EiFid_vs_chi2_rejected;
+				
 		TGraphErrors * PSD_plot;
 		TGraphErrors * PSD_plot_reso;		
 		TH1D ** PSD_spectrum; 
-		TH1D * PSD_spectrum_summed;
+		TH1D *  PSD_spectrum_summed;
 		
 		
 		Int_t count_line = 0;
@@ -117,39 +151,49 @@ class Plot_HEnergy_Voltage {
 		Double_t chi2_fast[6];
 		Double_t chi2_Slow[6];
 		Double_t chi2_NTD[6];
-		Int_t Time_Crate;		
+		Double_t chi2_half[6];
+		Double_t Energy_OF[6];
+		Double_t chi2_i[6];
+		Int_t Time_Crate;
+		Int_t Mega_stp;	
+		Int_t N_partitiontree;	
 		Int_t point_time_reso = 0 ;
+		Int_t ndof_chi2;
 		Double_t reso_eV ;
+		Double_t weight_detector ;
+		unsigned int Pair_partition;
+		Double_t IonCut;
+
 		
 		
 	public:
-		Plot_HEnergy_Voltage(const std::string &list_name , Double_t Heat , bool IsRun , bool On_processed , const std::string &outputdir, bool local_list );
+		Plot_HEnergy_Voltage(std::string const &list_name , Double_t const & Heat , bool const & IsRun , bool const & On_processed , std::string const & outputdir, bool const & local_list, std::string const & detector, unsigned int const & runonpairpart, Double_t const & ionCut );
 		
 		~Plot_HEnergy_Voltage() = default;
 		
-		void RunOnly(Double_t Heat);
-		void RunList(Double_t Heat, const std::string &list);
+		void RunOnly(Double_t const & Heat);
+		void RunList(Double_t const & Heat, std::string const & list);
 		void Help();
 		void Init();
 		void Parse_List();
-		void Open_file( const std::string &file_name);
-		void Load_chain( const std::string &tree_name);
+		void Open_file(  std::string const  &file_name);
+		void Load_chain(  std::string const  &tree_name);
 		void Loop_over_Chain();
 		void Loop_over_Chain_processed();
-		void Write_histo_tofile(float temp, int voltage, const std::string &run_name);
+		void Write_histo_tofile(float const & temp, int const & voltage, std::string const &run_name);
 		void SetTemp();
-		void SetTemp(Double_t heat_);
+		void SetTemp(Double_t const & heat_);
 		void SetRunname();
-		void SetRunname(const std::string &runName);
+		void SetRunname( std::string const &runName);
 		void Estimate_Run_ellapsed_time();
 		void loop_over_generic_chain( TChain* chain);
-		//void GetEntryChain(Int_t Nchain, std::string  chainnames),
 		void cleaning();
-		Double_t EpBinIndex(Double_t Ep, std::vector<Double_t> binning );
-		Double_t Kevee_weight(Double_t Eh);
-		void Write_timed_reso(const std::string &name_output_reso);
+		Double_t EpBinIndex(Double_t const & Ep, std::vector<Double_t> const & binning );
+		Double_t Kevee_weight(Double_t const & Eh);
+		void Write_timed_reso( std::string const & name_output_reso);
 		void Clean();
-		//void merge_outputfiles(float temp, int voltage);
+		bool Pass_chi2_cut(std::string const & detector, Double_t const & Ep , Double_t const & chi2A, Double_t const & chi2B);
+		bool Pass_Deltachi2_cut(std::string const & detector, Double_t const & chi2_1, Double_t const & chi2_2);
 };
 
 #endif
