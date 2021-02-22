@@ -1,9 +1,8 @@
-
 #include "Histo_reader_from_rootfile.h"
 #include "tclap/CmdLine.h"
 
 using namespace std;
-
+//------------------------------------- Class constructor-------------------------------------------------------------------------------------------
 Histo_reader_from_rootfile::Histo_reader_from_rootfile( const std::string file_list, const std::string &list_histo , const std::string detector, const std::string outputname, bool verbosity, bool runontree, double voltage_user, std::string run_arg, bool const & do_kernel, bool const & do_dru )	{
     Vec_hist_name.clear();
 	Vec_paramam_vs_time_lowE.clear() ;   
@@ -18,6 +17,7 @@ Histo_reader_from_rootfile::Histo_reader_from_rootfile( const std::string file_l
 	RUN            = run_arg;
 	Do_kernel      = do_kernel;
 	Do_DRU         = do_dru ;
+//------------------------------------- Definition of histo for modeling choice of binning and boundaries are important !------------------------------------------------------------------------------------
 	Histo_from_tree = new TH1D("Ephonon_spectrum_from_tree","Ephonon_spectrum_from_tree",4000,0.01,300.);
 	Histo_from_tree->Sumw2();	
 	if(Detector == "RED30"){
@@ -27,6 +27,7 @@ Histo_reader_from_rootfile::Histo_reader_from_rootfile( const std::string file_l
 	}else if(Detector == "NbSi209"){ 
 	   Detector_Gemass = 0.2;
 	}
+//------------------------------------- getting the inputs data-------------------------------------------------------------------------------------------
 	std::string type_to_extract = "TH1D" ;
 	Open_and_store_from_list(list_histo, type_to_extract.c_str() );
 	type_to_extract = "TFile";
@@ -34,10 +35,12 @@ Histo_reader_from_rootfile::Histo_reader_from_rootfile( const std::string file_l
 	Get_histo_from_File();
 	std::vector<double> data_to_smooth =  Fill_data_array_vec("Ep");
 	std::vector<double> data_weight    =  Fill_data_array_vec("weight");
+//------------------------------------- Modeling method kernel and/or Analytics-------------------------------------------------------------------------------------------
 	Optimise_smoothing(data_to_smooth);	  
 	
 }
 
+//------------------------------------- method to get input histogram for comparison sake-------------------------------------------------------------------------------------------
 void Histo_reader_from_rootfile::Get_histo_from_File(){
 		for(unsigned int i = 0 ; i < Vec_hist_name.size() ; i ++ ){
 			if(!(Input_file->Get((Vec_hist_name.at(i)).c_str()))) continue;
@@ -55,6 +58,7 @@ void Histo_reader_from_rootfile::Get_histo_from_File(){
 		}
 }
 
+//------------------------------------- method to get input  file and set address to desired root trees -------------------------------------------------------------------------------------------
 void Histo_reader_from_rootfile::Open_and_store_from_list(const std::string &list, const std::string & type_obj){	
 	std::string line_list_IN ="";
 	std::cout << " opening list : "<<list<<std::endl;
@@ -90,7 +94,7 @@ void Histo_reader_from_rootfile::Open_and_store_from_list(const std::string &lis
 	}
 	
 }
-
+//------------------------------------- method to get input  file and set address to desired root trees -------------------------------------------------------------------------------------------
 void Histo_reader_from_rootfile::Open_inputfile(std::string const & name){
 
     TFile * temp_file = new TFile(Form("%s",name.c_str()));
@@ -106,8 +110,8 @@ void Histo_reader_from_rootfile::Open_inputfile(std::string const & name){
 	TH1D * timed_Hist = (TH1D*)Input_file->Get(Form("Ephonon_pos%2.0f_ellapsed_time",Voltage_user));
 	std::cout<<" time from  hist "<<timed_Hist->Integral() / (24.*3600.)<<" time from parameter "<< Time_exposition <<std::endl;
 }
-
- double * Histo_reader_from_rootfile::Fill_data_array(std::string name_variable){
+//------------------------------------- method to fill static table for gaussian kernel computation-------------------------------------------------------------------------------------------
+double * Histo_reader_from_rootfile::Fill_data_array(std::string name_variable){
         double  data [event_tree -> GetEntries()];
         if(IsVerbose) std::cout<< " Storing data to array  "<<std::endl;
         for(unsigned int i = 0 ; i < event_tree -> GetEntries() ; i++){     
@@ -122,7 +126,7 @@ void Histo_reader_from_rootfile::Open_inputfile(std::string const & name){
         }
         return data;
 }
-
+//------------------------------------- method to fill array table for gaussian kernel computation and filling histo for analytical-------------------------------------------------------------------------
 std::vector<double>  Histo_reader_from_rootfile::Fill_data_array_vec(std::string name_variable){
         std::vector<double>  data (event_tree -> GetEntries());
         if(IsVerbose) std::cout<< " Storing data to array  "<<std::endl;
@@ -143,7 +147,7 @@ std::vector<double>  Histo_reader_from_rootfile::Fill_data_array_vec(std::string
         std::cout <<" integral Hist from tree "<<Histo_from_tree->Integral()<<std::endl;
         return data;
 }
-
+//------------------------------------- method to fit data -------------------------------------------------------------------------------------------
 void Histo_reader_from_rootfile::Optimise_smoothing( std::vector<double>  data){
       if(IsVerbose) std::cout<< " smoothing spectrum  by TKDE"<<std::endl;
       TCanvas * c = new TCanvas("c","c", 1000,1000);
@@ -205,22 +209,10 @@ void Histo_reader_from_rootfile::Optimise_smoothing( std::vector<double>  data){
             hist_buff_kernel->Scale(1./hist_buff_kernel->Integral("WIDTH"));
         }
         if(Do_kernel)hist_buff_kernel->Scale(Histo_from_tree->Integral("WIDTH"));
-        //TF1 * f_bkground = new TF1("analytical_bkg","[0]*exp([1]*x)+[2]*exp([3]*x) + [4]",4e-1,60.);
+
+//------------------------------------- Function used for modelisation here double exponential + cte + 3 fixed gaussian for Ge K L M ---------------------------------------------
         TF1 * f_bkground = new TF1("analytical_bkg","[0]*exp([1]*x)+[2]*exp([3]*x) + [4] + [5]*exp(-0.5*pow(((x-[6])/[7]),2)) + [8]*exp(-0.5*pow((x-[9])/[10],2)) + [11]*exp(-0.5*pow((x-[12])/[13],2))",6.9e-1,300.);
-        /*f_bkground->SetParameter(0,1.10599e+08);
-        f_bkground->SetParameter(1,-12.4691);
-        f_bkground->SetParameter(2,67966.5);
-        f_bkground->SetParameter(3,-3.18593);
-        f_bkground->SetParameter(4,5.39074);
-        f_bkground->SetParameter(5,143.877);
-        f_bkground->SetParameter(6,3.66);
-        f_bkground->SetParameter(7,2.87e-01);
-        f_bkground->SetParameter(8, 104.814);
-        f_bkground->SetParameter(9,2.97e+1);
-        f_bkground->SetParameter(10,9.44e-01);
-        f_bkground->SetParameter(11, 226.983);
-        f_bkground->SetParameter(12,2.38e+2);
-        f_bkground->SetParameter(13,3.5);*/
+       
         f_bkground->SetParameter(0,2.65558e+06);
         f_bkground->SetParameter(1,-6.74769);
         f_bkground->SetParameter(2,579.215);
@@ -235,7 +227,6 @@ void Histo_reader_from_rootfile::Optimise_smoothing( std::vector<double>  data){
         f_bkground->SetParameter(11, 226.983);
         f_bkground->SetParameter(12,2.38e+2);
         f_bkground->SetParameter(13,3.5);
-        //(4.68064e+07,-1.52920e+01,2.39825e+02,-5.56223e+01,1.47043e+01);
         f_bkground->FixParameter(6,3.66);
         f_bkground->FixParameter(7,2.87e-01);
         f_bkground->FixParameter(9,2.97e+1);
@@ -243,7 +234,7 @@ void Histo_reader_from_rootfile::Optimise_smoothing( std::vector<double>  data){
         f_bkground->FixParameter(12,2.38e+2);
         f_bkground->FixParameter(13,3.5);
         Histo_from_tree->Fit(f_bkground,"rWL");
-        //f_bkground->SetParameters(f_bkground->GetParameter(0),f_bkground->GetParameter(1),f_bkground->GetParameter(2),f_bkground->GetParameter(3),f_bkground->GetParameter(4),f_bkground->GetParameter(5),f_bkground->GetParameter(6),f_bkground->GetParameter(7),f_bkground->GetParameter(8),f_bkground->GetParameter(9),f_bkground->GetParameter(10),f_bkground->GetParameter(11),f_bkground->GetParameter(12),f_bkground->GetParameter(13));
+        
         f_bkground->SetParameter(0,f_bkground->GetParameter(0));
         f_bkground->SetParameter(1,f_bkground->GetParameter(1));
         f_bkground->SetParameter(2,f_bkground->GetParameter(2));
@@ -268,8 +259,9 @@ void Histo_reader_from_rootfile::Optimise_smoothing( std::vector<double>  data){
         Histo_from_tree->Fit(f_bkground,"rWL");
         Int_t fit_status = Histo_from_tree->Fit(f_bkground,"rWL");
         int NFit = 0 ;
+//------------------------------------- fit until fit status = converged ! 4 times max -----------------------------------------------------------------------
         do{
-            //f_bkground->SetParameters(f_bkground->GetParameter(0),f_bkground->GetParameter(1),f_bkground->GetParameter(2),f_bkground->GetParameter(3),f_bkground->GetParameter(4),f_bkground->GetParameter(5),f_bkground->GetParameter(6),f_bkground->GetParameter(7),f_bkground->GetParameter(8),f_bkground->GetParameter(9),f_bkground->GetParameter(10),f_bkground->GetParameter(11),f_bkground->GetParameter(12),f_bkground->GetParameter(13));
+
             f_bkground->SetParameter(0,f_bkground->GetParameter(0));
             f_bkground->SetParameter(1,f_bkground->GetParameter(1));
             f_bkground->SetParameter(2,f_bkground->GetParameter(2));
@@ -341,6 +333,7 @@ void Histo_reader_from_rootfile::Optimise_smoothing( std::vector<double>  data){
         Double_t int2 = Histo_from_tree->IntegralAndError(Histo_from_tree->FindBin(26),Histo_from_tree->FindBin(33),error_int2);
         Double_t int3 = Histo_from_tree->IntegralAndError(Histo_from_tree->FindBin(10),Histo_from_tree->FindBin(15),error_int3);
         Double_t int4 = Histo_from_tree->IntegralAndError(Histo_from_tree->FindBin(228),Histo_from_tree->FindBin(248),error_int4);
+//------------------------------------- 1.3 keV / 10.36 keV ratio should be around 11 % -----------------------------------------------------------------------
         std::cout<<"10.37 keV over 1.3 keV line ratio "<< int2 / int4 <<std::endl;
         streamoutpeak<<RUN<<" "<<int1<<"  "<<error_int1<<" "<<int2<<"  "<<error_int2<<" "<<int3<<"  "<<error_int3<<" "<<int4<<" "<<error_int4<<std::endl;
         streamoutpeak.close();
@@ -352,6 +345,7 @@ void Histo_reader_from_rootfile::Optimise_smoothing( std::vector<double>  data){
         ouput_smooth_spectrum->Close();
         Input_weighted_spectrum->Close();        
 }
+//------------------------------------- Method to display numerous histo on the same pad-----------------------------------------------------------------------
 int Histo_reader_from_rootfile::color_rainbow(int i,int nbval){
 	int color;
     //100,798,845,64,52
@@ -378,6 +372,7 @@ int Histo_reader_from_rootfile::color_rainbow(int i,int nbval){
     return color;
 } 
 
+//------------------------------------- Method to estimate the quality of gaussian kernel modelisation-----------------------------------------------------------------------
 double Histo_reader_from_rootfile::calculatechi2(TH1D *hdata,TH1* hkde,double emin,double emax)
 {
      int binstart=hdata->FindBin(emin);
