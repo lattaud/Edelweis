@@ -163,11 +163,12 @@ class Plot_HEnergy_Voltage {
 		Double_t weight_detector ;
 		unsigned int Pair_partition;
 		Double_t IonCut;
+		bool Neg_cutIon;
 
 		
 		
 	public:
-		Plot_HEnergy_Voltage(std::string const &list_name , Double_t const & Heat , bool const & IsRun , bool const & On_processed , std::string const & outputdir, bool const & local_list, std::string const & detector, unsigned int const & runonpairpart, Double_t const & ionCut );
+		Plot_HEnergy_Voltage(std::string const &list_name , Double_t const & Heat , bool const & IsRun , bool const & On_processed , std::string const & outputdir, bool const & local_list, std::string const & detector, unsigned int const & runonpairpart, Double_t const & ionCut, bool const & cut_ion_rej );
 		
 		~Plot_HEnergy_Voltage() = default;
 		

@@ -30,10 +30,10 @@ TGraph* Global_eff = new TGraph();
 double Eff_function(double* x, double* par);
 
 
-void get_eff_from_file(std::string const& nameeffFile){
+void get_eff_from_file(std::string const& nameeffFile, std::string const& runs){
 
     TFile * f_efficiency = new TFile(nameeffFile.c_str(),"UPDATE");
-    Global_eff = (TGraph*) f_efficiency->Get("EfficiencyRED3078Vee");
+    Global_eff = (TGraph*) f_efficiency->Get(Form("Efficienciy_cutChihA_%s",runs.c_str()));
 }
 
 double Eff_function(double* x, double* par){
@@ -178,7 +178,7 @@ void Per_tensionHist(TH1D * hist , TH1D * hist_2 , Double_t Tension,  Double_t T
 
 }
 
-void Launch_plotting(std::string  Input_file, std::string Temp, std::string List_ofrunandtension , std::string resoCAT,bool plotlimit, std::string detector_name){
+void Launch_plotting(std::string  Input_file, std::string Temp, std::string List_ofrunandtension , std::string resoCAT,bool plotlimit, std::string detector_name, bool const & apply_eff){
 
 
 	std::string bias_applied, buffer; 
@@ -263,7 +263,7 @@ void Launch_plotting(std::string  Input_file, std::string Temp, std::string List
 		
 		Renorm_Hist_and_store(Hist_vec_kee [i], Tension [i], Norm_Tension [i], " E_{heat} (keVee)", 0, resoCAT, detector_name);
 		std::string prefixednamed = resoCAT + "_phonon";
-		Apply_efficiency(Hist_vec [i], Tension [i]);
+		if(apply_eff)Apply_efficiency(Hist_vec [i], Tension [i]);
 		Renorm_Hist_and_store(Hist_vec [i], Tension [i], Norm_Tension [i], " E_{heat} (keV)", 0, prefixednamed, detector_name);
 		Make_Nice_Hist(Hist_vec_kee [i], Tension [i], Norm_Tension [i], " E_{heat} (keVee)",0, detector_name,false);
 		Make_Nice_Hist(Hist_vec [i], Tension [i], Norm_Tension [i], " E_{phonon} (keV)", 0, detector_name, false);
@@ -1026,12 +1026,12 @@ break;
 	c->SetGridx();
 	c->SetGridy();
 	
-	TH2D * axes = new TH2D("axes", "", 100, 0.1, 12., 100, 0.1, 10000000  );
+	TH2D * axes = new TH2D("axes", "", 100, 0.1, 12., 100, 0.1, 1e10  );
 	axes->GetXaxis()->SetTitle(" E_{phonon} (keV)");
 	axes->GetXaxis()->SetTitleOffset(1.25);
 	axes->GetYaxis()->SetTitle("NEvent.keV ^{-1}.day^{-1}.kg^{-1}");
 	axes->GetYaxis()->SetTitleOffset(1.3);
-	axes->GetYaxis()->SetRangeUser(1,10000000);
+	//axes->GetYaxis()->SetRangeUser(1,1e13);
 	
 	axes->Draw("");
 	axes->SetStats(kFALSE);
@@ -1069,7 +1069,7 @@ break;
 		
 	}
 	leg->Draw();
-	std::string name_plot = "Plot_output/Eh_vs_V_"+Temp+"mk_normalized"+resoCAT+".pdf" ;
+	std::string name_plot = "Plot_output/Eh_vs_V_"+Temp+"mk_normalized"+resoCAT+".png" ;
 	c->SaveAs(name_plot.c_str());
 
 	
@@ -1116,7 +1116,7 @@ break;
 		Hist_vec_kee [i]->Draw("HIST E SAME");
 	}
 	leg->Draw();
-	std::string name_plotneg = "Plot_output/Eh_kee_vs_V_"+Temp+"mk_normalized"+resoCAT+".pdf" ;
+	std::string name_plotneg = "Plot_output/Eh_kee_vs_V_"+Temp+"mk_normalized"+resoCAT+".png" ;
 	cc->SaveAs(name_plotneg.c_str());
    TLegend *leglim = new TLegend(0.6, 0.8, .9, .9);
    //leglim->AddEntry(Limit, "RED30 Migdal", "p l");
@@ -1342,14 +1342,19 @@ int main(int argc, char** argv) {
    TCLAP::ValueArg<std::string> Output_name("o", "output-name", "Output name", true, "", "string", cmd);
    TCLAP::ValueArg<std::string> Temperature("t", "temp", "temperature", true, "", "string", cmd);
    TCLAP::ValueArg<std::string> Tension("", "tension", " list of tension to study", true, "", "string", cmd);
+   TCLAP::ValueArg<std::string> Eff_file("", "eff", " Efficiency file", true, "", "string", cmd);
+   TCLAP::ValueArg<std::string> Ion_cut("", "Ion", " Ion cut", true, "", "string", cmd);
    TCLAP::SwitchArg IsSpectrum("", "spectrum", "spectrum?", cmd);
    TCLAP::SwitchArg Islimit("", "lim", "limits?", cmd);
    TCLAP::SwitchArg Istimedep("", "time-dep", "time studies?", cmd);
    TCLAP::SwitchArg IsrateHO("", "rateHO", "HO rate studies?", cmd);
+   TCLAP::SwitchArg Apply_efficiency("", "ApplyEff", "Apply effyciency to spectra?", cmd);
    cmd.parse(argc, argv);
-   get_eff_from_file("EfficiencyRED30.root");
+   std::string Eff_file_string = "Efficiency_folder/Efficiencies_"+Ion_cut.getValue()+"_"+Eff_file.getValue()+"_cutFid.root";
+   std::cout<<" Eff File "<<Eff_file_string<<std::endl;
+   get_eff_from_file(Eff_file_string, Eff_file.getValue());
    if(Istimedep.getValue())  Launch_plotting_list(inputList.getValue(),Temperature.getValue(), Tension.getValue(), Output_name.getValue(),Islimit.getValue());
-   if(IsSpectrum.getValue() && Input_file.isSet()) Launch_plotting(Input_file.getValue(), Temperature.getValue(), Tension.getValue(), Output_name.getValue(),Islimit.getValue(),Detector_name.getValue()); 
+   if(IsSpectrum.getValue() && Input_file.isSet()) Launch_plotting(Input_file.getValue(), Temperature.getValue(), Tension.getValue(), Output_name.getValue(),Islimit.getValue(),Detector_name.getValue(),Apply_efficiency.getValue()); 
    if(IsrateHO.getValue())  Study_rate_HO(inputList.getValue(),Temperature.getValue(),Tension.getValue());
 std::cout<<" Ending Routine "<<std::endl;
     delete Global_eff;

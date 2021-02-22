@@ -4,12 +4,12 @@ from subprocess import call, PIPE, STDOUT, Popen
 import argparse
 import datetime
 
-DirList = [0.,0.1,0.2,0.3,0.4]
+DirList = [0.4]#-1000.,0.,0.2]
 
 
 for iDir in DirList:
 	
-	cmd = "./Skimmer --Parity 2 --Temp 20 -o PHYSIC_RUN_Pair_Partition_Ei_FID -d NbSi209 --inputList List_Run_physics.txt --IonCut "+str(iDir)
+	cmd = "./Skimmer --Parity 2 --Temp 20 -o PHYSIC_RUN_Pair_Partition_Compton_study -d NbSi209 --inputList List_Run_physics.txt --IonCut "+str(iDir)#+" --RejectedIoncut"
 	print(cmd)
 	os.system(cmd)
 

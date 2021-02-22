@@ -29,7 +29,7 @@ void Smearing_distribution::Get_wimpgr(){
 }
 
 void Smearing_distribution::Get_efficiencies(){
-   Efficiency_graph  = (TGraph*) Eff_file->Get(Form("Efficienciy_cutChihB_%s",Eff_NAME.c_str()));   
+   Efficiency_graph  = (TGraph*) Eff_file->Get("Efficienciy_cutChihA");   
 }
 void Smearing_distribution::Apply_efficiencies(){
    

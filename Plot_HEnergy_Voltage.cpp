@@ -2,12 +2,13 @@
 
 using namespace std;
 
-Plot_HEnergy_Voltage::Plot_HEnergy_Voltage(  std::string const & list_name_in, Double_t const & HEAT, bool const & IsRun, bool const & On_processed , std::string const & outputdir, bool const & local_list_, std::string const & detector_,unsigned int const & runonpairpart, Double_t const & ionCut){
+Plot_HEnergy_Voltage::Plot_HEnergy_Voltage(  std::string const & list_name_in, Double_t const & HEAT, bool const & IsRun, bool const & On_processed , std::string const & outputdir, bool const & local_list_, std::string const & detector_,unsigned int const & runonpairpart, Double_t const & ionCut, bool const & cut_ion_rej){
 	
 
 	TH1::SetDefaultSumw2();	
 	IS_PROCESSED = On_processed;
 	Detector = detector_;
+	Neg_cutIon = cut_ion_rej ;
 	OutputDir = Form("%s_%3.2feV_%s",outputdir.c_str(),ionCut,Detector.c_str()) ;
 	Pair_partition = runonpairpart;
 	IonCut = ionCut ;
@@ -613,18 +614,21 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
         G2_Eh_chi2->SetPoint(Ngraph_point, Eptot,(chi2_A/ndof_chi2));
         Ngraph_point++;
 		
-//---------------chi ionnisation
-		if((chi2ionA / 1024. ) > 1.4  && (chi2ionB / 1024. ) > 1.4){
+//---------------chi ionization
+		if((chi2ionA / 1024. ) > 1.8  && (chi2ionB / 1024. ) > 1.8){
 		    cutchiion_entries++;
 		    EiFid_vs_Eh_rejected->SetPoint(it,Eh, Ei);
 		    continue;
 		}
 		
 //---------------cut IonE 
-		if(Ei < IonCut ) {
+		if(Ei < IonCut && IonCut >= 0 && !Neg_cutIon) {
 		    cutEion_entries++;
 		    EiFid_vs_Eh_rejected->SetPoint(it,Eh, Ei);
 		    continue ;
+		}else if(Ei >= IonCut && Neg_cutIon){
+		    cutEion_entries++;
+		    continue;
 		}
 //---------------cut NbSiFid
 		if(Detector == "NbSi209"  && pow(EpA - EpB,2) >= pow(0.6,2) + pow(0.045*Eptot,2) ) {

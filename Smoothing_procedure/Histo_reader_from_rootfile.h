@@ -36,19 +36,15 @@
 class Histo_reader_from_rootfile {
 	public: 
 	
-		Histo_reader_from_rootfile( const std::string file_list, const std::string &list_histo , const std::string detector, const std::string outputname, bool verbosity,bool runontree, double voltage_user, std::string run );		
+		Histo_reader_from_rootfile( const std::string file_list, const std::string &list_histo , const std::string detector, const std::string outputname, bool verbosity,bool runontree, double voltage_user, std::string run, bool const & do_kernel, bool const & do_dru);		
 		~Histo_reader_from_rootfile() = default;
 		void Get_histo_from_File();
 		void Open_and_store_from_list(const std::string & list, const std::string & type_obj);
-		void Fit_histo();
 		void Make_graph_from_vector(const std::string & name, std::vector<Double_t> data);
-		void Store_to_output();
 		void Init_gaussian_kernel();
 		double * Fill_data_array(std::string name_variable);
 		std::vector<double>  Fill_data_array_vec(std::string name_variable);
-		void smooth_spectrums( double* data,  double* weight);
-		void smooth_spectrums( std::vector<double>  data,  std::vector<double>  weight);
-        double Optimise_smoothing( std::vector<double>  data);		
+        void Optimise_smoothing  ( std::vector<double>  data);		
 		double calculatechi2(TH1D *hdata,TH1* hkde,double emin,double emax);//courtoisie de Quentin
 		int color_rainbow(int i,int nbval);
 		void Open_inputfile(std::string const & name);
@@ -80,6 +76,9 @@ class Histo_reader_from_rootfile {
 		Double_t Voltage_user;
 		Double_t weight;
 		TKDE * kde_opti;
+		TF1  * Analytical_bkg;
+		bool Do_kernel;
+		bool Do_DRU;
 
 };
 

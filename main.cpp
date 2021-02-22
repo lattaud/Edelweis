@@ -15,6 +15,7 @@ int main(int argc, char** argv) {
 	TCLAP::SwitchArg RunOnRun("", "IsRun", "IsRun?", cmd);
 	TCLAP::SwitchArg RunOnLocalList("", "IsLocalList", "IsLocalList?", cmd);
 	TCLAP::SwitchArg RunOnProcessed("", "RunOnProcessed", "RunOnProcessed?", cmd);
+	TCLAP::SwitchArg Rejected_IonCut("", "RejectedIoncut", "Get event rejected by ion cut?", cmd);
 	cmd.parse(argc, argv);
 	try{
 	    std::cout<<" Testing Arguments"<<std::endl;
@@ -29,7 +30,7 @@ int main(int argc, char** argv) {
 	}
 	
 	std::cout<<"Launching instance with "<<inputfileList.getValue()<<" "<< Temp.getValue()<<" "<< RunOnRun.getValue()<<" "<< RunOnProcessed.getValue()<<" "<< Output_name.getValue()<<" "<< RunOnLocalList.getValue()<<" "<<  Detector_name.getValue()<<" "<<Parity.getValue()<<" Ion cut "<< IonCut.getValue()<<std::endl;
-	Plot_HEnergy_Voltage * Test_obj = new  Plot_HEnergy_Voltage(inputfileList.getValue(), Temp.getValue(), RunOnRun.getValue(), RunOnProcessed.getValue(), Output_name.getValue(), RunOnLocalList.getValue(),  Detector_name.getValue(),Parity.getValue(),IonCut.getValue()); 
+	Plot_HEnergy_Voltage * Test_obj = new  Plot_HEnergy_Voltage(inputfileList.getValue(), Temp.getValue(), RunOnRun.getValue(), RunOnProcessed.getValue(), Output_name.getValue(), RunOnLocalList.getValue(),  Detector_name.getValue(),Parity.getValue(),IonCut.getValue(), Rejected_IonCut.getValue()); 
 	
 	delete Test_obj ;
 	
