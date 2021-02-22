@@ -5,7 +5,7 @@
 #include <string>
 
 
-// Root related libraries
+//------------------------------------- Root related libraries-------------------------------------------------------------------------------------------
 #include "TFile.h"
 #include "TTree.h"
 #include "TCanvas.h"
@@ -29,13 +29,13 @@ using namespace std;
 TGraph* Global_eff = new TGraph();
 double Eff_function(double* x, double* par);
 
-
+//------------------------------------- Function to get efficiency graph-------------------------------------------------------------------------------------------
 void get_eff_from_file(std::string const& nameeffFile, std::string const& runs){
 
     TFile * f_efficiency = new TFile(nameeffFile.c_str(),"UPDATE");
     Global_eff = (TGraph*) f_efficiency->Get(Form("Efficienciy_cutChihA_%s",runs.c_str()));
 }
-
+//------------------------------------- Definition of efficiency function -------------------------------------------------------------------------------------------
 double Eff_function(double* x, double* par){
 
     Double_t Voltage = par[0];
@@ -45,7 +45,7 @@ double Eff_function(double* x, double* par){
 
 }
 
-
+//------------------------------------- Beauty function on renormalisation of histogramms-------------------------------------------------------------------------------------------
 void Make_Nice_Hist(TH1D* hist , Double_t tension, Double_t norm, std::string xaxisname, int rebin, std::string detector_name,bool scale){
 
 	
@@ -80,6 +80,7 @@ void Make_Nice_Hist(TH1D* hist , Double_t tension, Double_t norm, std::string xa
 	hist->SetTitle("");
 
 }
+//------------------------------------- Function to correct histogramm for efficienies-------------------------------------------------------------------------------------------
 void Apply_efficiency(TH1D* hist , Double_t tension){
 
     TF1 * funct_eff = new TF1("eff_function",Eff_function,0.001, 1.3,1 );
@@ -90,13 +91,12 @@ void Apply_efficiency(TH1D* hist , Double_t tension){
         double DRU (hist->GetBinContent(i));
         double Eff ((funct_eff->Eval(E/(1+tension/3.)))/100.);
         double DRUcor (DRU * 1./Eff);
-        //std::cout << " bin content corrected "<<DRUcor<<" bin  "<<i<<" E "<<E<<" Eff "<<funct_eff->Eval(E/(1+tension/3.))<<std::endl;
         hist->SetBinContent(i,DRUcor);
         
     }
 
 }
-
+//------------------------------------- Function to renorm to DRU and store histogramms-------------------------------------------------------------------------------------------
 void Renorm_Hist_and_store(TH1D* hist , Double_t tension, Double_t norm, std::string xaxisname, int rebin,std::string name_hist, std::string detector_name){
 
 	
@@ -122,7 +122,6 @@ void Renorm_Hist_and_store(TH1D* hist , Double_t tension, Double_t norm, std::st
 	hist->GetXaxis()->SetTitleOffset(1.25);
 	hist->GetYaxis()->SetTitle("NEvent.keV ^{-1}.day^{-1}.kg^{-1}");
 	hist->GetYaxis()->SetTitleOffset(1.3);
-	//hist->GetYaxis()->SetRangeUser(10,10000000);
 	if (rebin == 1 ){
 	
 		hist->RebinX(4);
@@ -135,6 +134,8 @@ void Renorm_Hist_and_store(TH1D* hist , Double_t tension, Double_t norm, std::st
 	Ouputfile->Close();
 
 }
+
+//------------------------------------- Function to fit HO spectrum with simple exponential-------------------------------------------------------------------------------------------
 void Fit_and_store_HO(TH1D* hist){
       
       TF1 * exp_to_fit= new TF1("HO_fit","[0]*exp(-x*[1])",0.,10);   
@@ -149,7 +150,7 @@ void Fit_and_store_HO(TH1D* hist){
       
       
 }
-
+//------------------------------------- Function to work on histogramms esthaetics-------------------------------------------------------------------------------------------
 void Make_Nice_Hist_time(TH1D* hist , Double_t tension, Double_t norm, std::string xaxisname, int rebin,int n){
 
 	
@@ -167,7 +168,6 @@ void Make_Nice_Hist_time(TH1D* hist , Double_t tension, Double_t norm, std::stri
 		hist->GetXaxis()->SetRangeUser(10,10000000);
 	}
 	hist->SetTitle("");
-	//std::cout<<" Integral hist "<<hist->Integral()<<std::endl;
 
 }
 
@@ -177,27 +177,25 @@ void Per_tensionHist(TH1D * hist , TH1D * hist_2 , Double_t Tension,  Double_t T
 	if( Tension ==  Tension_2) hist -> Add(hist_2) ;
 
 }
-
+//------------------------------------- Core Plotting function (swiss knife)-------------------------------------------------------------------------------------------
 void Launch_plotting(std::string  Input_file, std::string Temp, std::string List_ofrunandtension , std::string resoCAT,bool plotlimit, std::string detector_name, bool const & apply_eff){
-
 
 	std::string bias_applied, buffer; 
 	std::vector <std::string> Run_Name;
 	std::vector <std::string> Run_time_hists;
 	std::vector<std::string> tension_ ;
 	int iter = 0 ;
+//------------------------------------- Load list of tension to plot-------------------------------------------------------------------------------------------
 	ifstream Runlistname(List_ofrunandtension.c_str(),ios::in);
-   while(std::getline(Runlistname, buffer))   {    
-       
+   while(std::getline(Runlistname, buffer))   {           
        TString RUN = buffer ;
        if(RUN.Contains("#", TString::kIgnoreCase)) continue ;      
        Run_Name.push_back("Ephonon_pos"+buffer);
        Run_time_hists.push_back("Ephonon_pos"+buffer);
        tension_.push_back(buffer);
        std::cout<<" Voltage to Print " << "Ephonon_pos"+buffer<<std::endl;
-
 	}
-	
+//------------------------------------- Create histogramms per tension -------------------------------------------------------------------------------------------	
 	TH1D * Hist_vec           [Run_Name.size()];
 	TH1D * Hist_vec_normtime  [Run_time_hists.size()];
 	TH1D * Hist_vec_kee       [Run_Name.size()];	
@@ -205,7 +203,6 @@ void Launch_plotting(std::string  Input_file, std::string Temp, std::string List
 	Double_t Norm_Tension[Run_time_hists.size()];
 	std::string Tension_name;
 	Double_t Sign = 0 ; 
-
 	TLegend *leg = new TLegend(0.6, 0.6, .9, .9);
 	TLegend *legneg = new TLegend(0.7, 0.7, .9, .9);
 	TFile * Inputs = TFile::Open(Input_file.c_str());
@@ -213,31 +210,22 @@ void Launch_plotting(std::string  Input_file, std::string Temp, std::string List
 	TH1D * Hist_per_tension [tension_.size()];
 	TH1D * temp_Hist [tension_.size()];
 	Double_t who_first [tension_.size()];
-
-
+//------------------------------------- Get ellapsed time in the run-------------------------------------------------------------------------------------------
 	for(int i = 0; i < Run_time_hists.size()  ; i++){
 		std::string hist_name = "Ephonon_pos"+tension_.at(i);	
 		if(!(Inputs->Get((hist_name+"_ellapsed_time").c_str())))continue;
 		Hist_vec_normtime     [i] = (TH1D*) Inputs->Get((hist_name+"_ellapsed_time").c_str());
 		TString namehist = Hist_vec_normtime [i]->GetName();
-		if(namehist.Contains("pos", TString::kIgnoreCase) == 1) Sign = +1;
-		
-		for(int j = 0 ; j < tension_.size() ; j++){
-		
-			if(namehist.Contains((tension_ .at(j)).c_str(), TString::kIgnoreCase) == 1) {
-				
+		if(namehist.Contains("pos", TString::kIgnoreCase) == 1) Sign = +1;		
+		for(int j = 0 ; j < tension_.size() ; j++){		
+			if(namehist.Contains((tension_ .at(j)).c_str(), TString::kIgnoreCase) == 1) {				
 				Norm_Tension [i] = Hist_vec_normtime[i]->Integral();
 				std::cout<<" tension "<<  tension_.at(j) << " ellapsed time "<<Norm_Tension [i] <<std::endl;
-				//Tension [i] *= Sign ;
-				continue;
-				
-			}
-			
-		}
-		
+				continue;				
+			}			
+		}		
 	}
-	
-	
+//------------------------------------- Get desired histogramms-------------------------------------------------------------------------------------------		
 	int stop_it [Run_Name.size()][Run_Name.size()];
 	int IS_use [Run_Name.size()] ;
 	for(int i = 0; i < Run_Name.size()  ; i++){
@@ -247,20 +235,14 @@ void Launch_plotting(std::string  Input_file, std::string Temp, std::string List
 		Sign = -1;
 		IS_use [i]= 0;
 		TString namehist = Hist_vec [i]->GetName();
-		if(namehist.Contains("pos", TString::kIgnoreCase) == 1) Sign = +1;
-		
-		for(int j = 0 ; j < tension_.size() ; j++){
-		
-			if(namehist.Contains((tension_ [j]).c_str(), TString::kIgnoreCase) == 1) {
-				
+		if(namehist.Contains("pos", TString::kIgnoreCase) == 1) Sign = +1;		
+		for(int j = 0 ; j < tension_.size() ; j++){		
+			if(namehist.Contains((tension_ [j]).c_str(), TString::kIgnoreCase) == 1) {			
 				Tension [i] = std::stod(tension_ [j]);
-				//Tension [i] *= Sign ;
-				continue;
-				
-			}
-			
+				continue;				
+			}			
 		}		
-		
+//------------------------------------- Operation on histogramms scaling / storing / fitting-------------------------------------------------------------------------------------------		
 		Renorm_Hist_and_store(Hist_vec_kee [i], Tension [i], Norm_Tension [i], " E_{heat} (keVee)", 0, resoCAT, detector_name);
 		std::string prefixednamed = resoCAT + "_phonon";
 		if(apply_eff)Apply_efficiency(Hist_vec [i], Tension [i]);
@@ -270,8 +252,8 @@ void Launch_plotting(std::string  Input_file, std::string Temp, std::string List
 		leg->AddEntry(Hist_vec [i],(detector_name+" "+to_string(int (Tension [i]))+"V ;"+to_string(int(Norm_Tension [i]/(3600.*24.)))+" days").c_str(),"l");
 		//if(namehist.Contains("Ephonon_pos15.000000_22.mk", TString::kIgnoreCase) == 1) Fit_and_store_HO(Hist_vec [i]);
 	}
+//------------------------------------- Obsolete Limits extraction method here for references-------------------------------------------------------------------------------------------
 	bool compare_detector = false ;
-
 	TFile *Migdal_file = TFile::Open("Spectrum_migdal_HV.root", "UPDATE");
 	
 	TGraphErrors * Nbsi_graph = (TGraphErrors*) Migdal_file->Get("nbsi209_spectrum");
@@ -1044,7 +1026,8 @@ break;
 	
 	//Red_20_graph->Draw("PSAME");
    //Nbsi_graphSTD->Draw("PSAME");
-	
+   
+//------------------------------------- End limit computation-------------------------------------------------------------------------------------------	
 	bool plot_other = false ;
 	
 	 for(int nsig = 0; nsig <g_sigSTD_keV.size(); nsig++){
@@ -1052,7 +1035,7 @@ break;
             //g_sigSTD_keV.at(nsig)->Draw("PSAME");
             
    }
-	
+//------------------------------------- Plotting and saving to png format-------------------------------------------------------------------------------------------	
 	if(plotlimit){
 	       // DMlim       ->Draw("PSAME");
 	       // DMlim_2     ->Draw("PSAME");
@@ -1144,16 +1127,13 @@ break;
    //cc->SaveAs(("Limits_DM_"+resoCAT+".pdf").c_str());
 }
 
+//------------------------------------- Function to plot list of run for comparison sake-------------------------------------------------------------------------------------------
 void Launch_plotting_list(std::string  Input_list, std::string Temp, std::string List_ofrunandtension , std::string resoCAT,bool plotlimit){
 
-        std::string name_plot = "Plot_output/Eh_vs_V_"+Temp+"mk_TIME"+resoCAT+".pdf" ;
-	     std::string name_plotneg = "Plot_output/Eh_kee_vs_V_"+Temp+"mk_TIME"+resoCAT+".pdf" ;
-	
-	
+    std::string name_plot = "Plot_output/Eh_vs_V_"+Temp+"mk_TIME"+resoCAT+".pdf" ;
+	std::string name_plotneg = "Plot_output/Eh_kee_vs_V_"+Temp+"mk_TIME"+resoCAT+".pdf" ;		
 	TCanvas *c = new TCanvas("c","c",800,800);    
-
-        
-        
+       
    c->cd();
 	c->SetLogy();
 	c->SetLogx();
@@ -1288,16 +1268,12 @@ void Launch_plotting_list(std::string  Input_list, std::string Temp, std::string
 	nline++;
 	Inputs->Close();
 	}
-	
-	
-		
+			
 	//c->SaveAs(name_plot.c_str());
-	
-	
-
 
 }
 
+//------------------------------------- Function to study HO rate outdated mathis internship-------------------------------------------------------------------------------------------
 void Study_rate_HO(std::string list_file, std::string temp, std::string Volt){
    
       ifstream List_file(list_file.c_str(),ios::in);
@@ -1320,35 +1296,28 @@ void Study_rate_HO(std::string list_file, std::string temp, std::string Volt){
          std::cout<<"zone Analysis Run "<< Input_file<<" Rate  "<< h2_chi2_E->Integral(14,37,4,12)<<std::endl;
                   
       }
-        
-       
-       
-
-
-
 
 }
-
 
 
 int main(int argc, char** argv) {
 
 
-	TCLAP::CmdLine cmd("Plotting instance for DM edelweiss searches", ' ', "0.1");
-	TCLAP::ValueArg<std::string> Input_file("i", "input-file", "input file", true,"", "string");
+   TCLAP::CmdLine cmd("Plotting instance for DM edelweiss searches", ' ', "0.1");
+   TCLAP::ValueArg<std::string> Input_file("i", "input-file", "input file", true,"", "string");
    TCLAP::ValueArg<std::string> inputList("", "input-list", "Text file containing input files", true, "input.list", "string");
    cmd.xorAdd(Input_file, inputList);
    TCLAP::ValueArg<std::string> Detector_name("d", "detector", "Which detector", true, "", "string", cmd);
    TCLAP::ValueArg<std::string> Output_name("o", "output-name", "Output name", true, "", "string", cmd);
    TCLAP::ValueArg<std::string> Temperature("t", "temp", "temperature", true, "", "string", cmd);
-   TCLAP::ValueArg<std::string> Tension("", "tension", " list of tension to study", true, "", "string", cmd);
+   TCLAP::ValueArg<std::string> Tension("", "tension", " list file of tension to study", true, "", "string", cmd);
    TCLAP::ValueArg<std::string> Eff_file("", "eff", " Efficiency file", true, "", "string", cmd);
    TCLAP::ValueArg<std::string> Ion_cut("", "Ion", " Ion cut", true, "", "string", cmd);
    TCLAP::SwitchArg IsSpectrum("", "spectrum", "spectrum?", cmd);
-   TCLAP::SwitchArg Islimit("", "lim", "limits?", cmd);
-   TCLAP::SwitchArg Istimedep("", "time-dep", "time studies?", cmd);
-   TCLAP::SwitchArg IsrateHO("", "rateHO", "HO rate studies?", cmd);
-   TCLAP::SwitchArg Apply_efficiency("", "ApplyEff", "Apply effyciency to spectra?", cmd);
+   TCLAP::SwitchArg Islimit("", "lim", "do limits?", cmd);
+   TCLAP::SwitchArg Istimedep("", "time-dep", "do time studies?", cmd);
+   TCLAP::SwitchArg IsrateHO("", "rateHO", "do HO rate studies?", cmd);
+   TCLAP::SwitchArg Apply_efficiency("", "ApplyEff?", "Apply efficiency to spectra?", cmd);
    cmd.parse(argc, argv);
    std::string Eff_file_string = "Efficiency_folder/Efficiencies_"+Ion_cut.getValue()+"_"+Eff_file.getValue()+"_cutFid.root";
    std::cout<<" Eff File "<<Eff_file_string<<std::endl;
