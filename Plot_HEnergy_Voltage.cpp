@@ -2,9 +2,9 @@
 
 using namespace std;
 
-Plot_HEnergy_Voltage::Plot_HEnergy_Voltage(  std::string const & list_name_in, Double_t const & HEAT, bool const & IsRun, bool const & On_processed , std::string const & outputdir, bool const & local_list_, std::string const & detector_,unsigned int const & runonpairpart, Double_t const & ionCut, bool const & cut_ion_rej){
+//------------------------------------------------------Constructor of the Class-----------------------------------------------------------------------------------
+Plot_HEnergy_Voltage::Plot_HEnergy_Voltage(  std::string const & list_name_in, Double_t const & HEAT, bool const & IsRun, bool const & On_processed , std::string const & outputdir, bool const & local_list_, std::string const & detector_,unsigned int const & runonpairpart, Double_t const & ionCut, bool const & cut_ion_rej, std::string const &prod){
 	
-
 	TH1::SetDefaultSumw2();	
 	IS_PROCESSED = On_processed;
 	Detector = detector_;
@@ -12,6 +12,7 @@ Plot_HEnergy_Voltage::Plot_HEnergy_Voltage(  std::string const & list_name_in, D
 	OutputDir = Form("%s_%3.2feV_%s",outputdir.c_str(),ionCut,Detector.c_str()) ;
 	Pair_partition = runonpairpart;
 	IonCut = ionCut ;
+	Prod = prod;
 	std::cout<<" Running for detector "<< detector_<<" Partition "<<Pair_partition<<std::endl;
 	if(detector_ == "RED30"){
 	    weight_detector = 0.034; 
@@ -23,7 +24,7 @@ Plot_HEnergy_Voltage::Plot_HEnergy_Voltage(  std::string const & list_name_in, D
 	   weight_detector = 0.2;
 	   ndof_chi2 = 512 ; 
 	}
-	system(("source /pbs/home/h/hlattaud/PLOTEH/Create_outputdir.sh "+OutputDir).c_str());
+	system(("./Create_outputdir.sh "+OutputDir).c_str());
 	list_name = list_name_in;
 	local_list = local_list_ ;
 	if (IsRun){
@@ -33,17 +34,14 @@ Plot_HEnergy_Voltage::Plot_HEnergy_Voltage(  std::string const & list_name_in, D
 		std::cout<<"enter number of Run in the list"<<std::endl;
 		allRUN = 0 ;
 		Parse_List();	
-
 	}
-	
-	//Clean();
 }
 
 void Plot_HEnergy_Voltage::RunOnly(Double_t const & HEAT ){
 	TH1::SetDefaultSumw2();
 	SetTemp(HEAT);
 	SetRunname(list_name);
-	std::cout<<"Create Ploting instance "<<std::endl;
+	std::cout<<"Create Skimming instance "<<std::endl;
 	Init();
 }
 
@@ -51,7 +49,7 @@ void Plot_HEnergy_Voltage::RunList(Double_t const & Heat, std::string const & li
 	TH1::SetDefaultSumw2();
 	SetTemp(Heat);
 	SetRunname(list);
-	std::cout<<"Create Ploting instance "<<std::endl;
+	std::cout<<"Create Skimming instance "<<std::endl;
 	Init();	
 }
 void Plot_HEnergy_Voltage::Clean(){
@@ -95,27 +93,30 @@ void Plot_HEnergy_Voltage::Clean(){
 void Plot_HEnergy_Voltage::Help(){
 	std::cout<<" Please use the following option in the command line : list_name  "<<std::endl;
 }
-
+//--------------------------------------Chi 2 cut currently hard codded soon will be loaded from Jules G Calib files ----------------------------------------------
 bool Plot_HEnergy_Voltage::Pass_chi2_cut(std::string const & detector, Double_t const & Ep, Double_t const & chi2A, Double_t const & chi2B){
 
    bool output = true;
+//--------------------------------------Cut on heat channel A chi 2------------------------------------------------------------------------------------------------------
    double cutA = 1000000, cutB =1000000; 
    if(detector == "RED30") cutA = (1.15 + 100 * TMath::Power(fabs(Ep)/300. , 3.)) ;
    if(detector == "NbSi209") cutA = (1.2 + 100 * TMath::Power(fabs(Ep)/200. , 3.)) ;
    if(detector == "FID848") cutA = (1.15 + 100 * TMath::Power(fabs(Ep)/700. , 2.2)) ;
     
    output &=  chi2A <= cutA ;
-   
+//--------------------------------------Cut on heat channel B chi 2 if existing------------------------------------------------------------------------------------------   
    if(detector == "NbSi209") cutB = (1.2 + 100 * TMath::Power(fabs(Ep)/100. , 3.)) ;
    if(detector == "FID848") cutB = (1.15 + 100 * TMath::Power(fabs(Ep)/600. , 2.2)) ;
    
    if(detector != "RED30") output &= chi2B <= cutB ;
    return output;
 }
+//-------------------------------------Delta Chi 2 cut currently hard codded soon will be loaded from Jules G Calib files ----------------------------------------------
 bool Plot_HEnergy_Voltage::Pass_Deltachi2_cut(std::string const & detector, Double_t const & chi2_1, Double_t  const & chi2_2){
 
    bool output = true;
    double cut = chi2_1 - chi2_2;
+//-------------------------------------Delta chi2 cut only applied on RED30 so far----------------------------------------------------------------------------------
    if(detector == "RED30")   output &= cut < 0.001;
    if(detector == "NbSi209") return true; 
    if(detector == "FID848")  return true;
@@ -123,7 +124,7 @@ bool Plot_HEnergy_Voltage::Pass_Deltachi2_cut(std::string const & detector, Doub
    
    return output;
 }
-
+//-------------------------------------List parser method ---------------------------------------------------------------------------------------------------------
 void Plot_HEnergy_Voltage::Parse_List(){
 
 	double Heat_cat[100] ;	
@@ -138,9 +139,8 @@ void Plot_HEnergy_Voltage::Parse_List(){
 	std::string line_list_IN ="";
 	point_time_reso = 0 ;
 	reso_vs_time = new TGraph();
-	std::string prod = "prodg" ;
+	std::string prod = Prod;
 	std::string script_parity_partition ;
-	if(Detector == "NbSi209" || Detector == "FID848") prod = "prodj" ;
 	if(!Listfile.fail()){
 		while(  std::getline(Listfile, line_list_IN) )
 		{
@@ -154,7 +154,7 @@ void Plot_HEnergy_Voltage::Parse_List(){
 			    Heat_cat[ilist]	= temp_heat; 					
 		        std::cout<<" adding : /sps/edelweis/rootDataRun317/streams/"+prod+"/lists/"<<temp_str_list<< ".list Temp "<< Heat_cat[ilist]<< std::endl;
 		        string file = temp_str_list ;		       
-		        std::string prefix_list = "/pbs/home/h/hlattaud/PLOTEH/"  ;		        
+		        std::string prefix_list = ""  ;		        
 		        if(local_list == 0) prefix_list = "/sps/edelweis/rootDataRun317/streams/"+prod+"/lists/" ;		
 		        std::cout<< prefix_list+file+".list"<<std::endl;       
 		        ifstream efficiencies((prefix_list+file+".list").c_str());
@@ -172,7 +172,7 @@ void Plot_HEnergy_Voltage::Parse_List(){
 					            script_parity_partition="Create_listAll.sh";
 					           }
 					           std::cout<<" Create list for loop "<<script_parity_partition+" "+ListRun_name[count_line_mc]+" "+prod+" "+Detector<<std::endl;				
-					           system(("source /pbs/home/h/hlattaud/PLOTEH/"+script_parity_partition+" "+ListRun_name[count_line_mc]+" "+prod+" "+Detector).c_str());					
+					           system(("./"+script_parity_partition+" "+ListRun_name[count_line_mc]+" "+prod+" "+Detector).c_str());					
 					           std::cout<<" Run name ? " << ListRun_name[count_line_mc]<< " Heat  "<< Heat_cat[ilist] <<std::endl;						RunList( Heat_cat[ilist] , ListRun_name[count_line_mc] );				      
 					           count_line_mc += 1; 
 		       	 	}		        
@@ -185,7 +185,7 @@ void Plot_HEnergy_Voltage::Parse_List(){
 
 void Plot_HEnergy_Voltage::Open_file( std::string const & file_name ){
 
-//----------------Everest output----------------
+//-------------------------------------Loading tree from Everest root file---------------------------------------------------------------------------------------------------
 
 		chain_voltage              = new TChain("heatCalibData") ;
 		chain_index                = new TChain("boloHeader");		
@@ -208,6 +208,7 @@ void Plot_HEnergy_Voltage::Open_file( std::string const & file_name ){
 			   chain_chi2A                     ->Add(pNamemc);
 			   chain_event_Reso_processed      ->Add(pNamemc);
 		}
+//-------------------------------------Setting address of needed variable--------------------------------------------------------------------------------------------------------
 		N_partition = count_line ;		
 		cout<<N_partition << " partition in the Run " << endl;
 		cout << "[+] Linking variable...                                 " << endl;
@@ -226,7 +227,7 @@ void Plot_HEnergy_Voltage::Open_file( std::string const & file_name ){
 		Nb_HeatEnergy = chain_HeatEnergy -> GetEntries();
 		Nb_chi2       = chain_chi2A      -> GetEntries();
 	               
-//----------------Processed stuff (Nepal output)---------------- 
+//-------------------------------------Loading tree from Processed root file (Nepal output-------------------------------------------------------------------------------------------------------- 
 		
 		chain_voltage_pro             = new TChain("RunTree_Normal") ;
 		chain_event_processed         = new TChain("EventTree_trig_Normal_filt_decor");
@@ -250,7 +251,7 @@ void Plot_HEnergy_Voltage::Open_file( std::string const & file_name ){
 		      if(Detector == "RED30")  chain_event_processed_fast  ->Add(pNamemc);
 		      if(Detector == "FID848" || Detector == "NbSi209") chain_event_processed_Slow  ->Add(pNamemc);
 		}
-		
+//-------------------------------------Setting address of needed variable--------------------------------------------------------------------------------------------------------		
 		chain_voltage_pro   	   -> SetBranchAddress ("PSD_Filt",&PDS_noise);
 		chain_voltage_pro   	   -> SetBranchAddress ("Polar_Ion",&polarion);
 		chain_voltage_pro  	       -> SetBranchAddress ("cutoff_freq",&cutofffreq);
@@ -272,12 +273,12 @@ void Plot_HEnergy_Voltage::Open_file( std::string const & file_name ){
 	   }
 		cout << "[+] Linking variable... done                           " << endl;
 }
-
+//-------------------------------------Method to write to output root file----------------------------------------------------------------------------------------------------------
 void Plot_HEnergy_Voltage::Write_histo_tofile(float const & temp, int const & voltage, std::string const & run_name ){
 
 	std::string reso_CAT="";
 	std::string Processed = "";	
-//----------------categorization based on ADU heat reso----------------
+//-------------------------------------categorization based on ADU heat reso---------------------------------------------------------------------------------------------------------
 	bool eV_reso = true ;
 	double luke_boost = (1.+ fabs(voltage)/3.);
 	luke_boost = 1. ;
@@ -292,14 +293,14 @@ void Plot_HEnergy_Voltage::Write_histo_tofile(float const & temp, int const & vo
 	        if(Reso_cat_buffer >= 0.05*luke_boost) reso_CAT = "mediumres";
 	    }
 	 }
-//----------------categorization based on ADU heat reso----------------
+//-------------------------------------categorization based on ADU heat reso--------------------------------------------------------------------------------------------------------------
 	bool ADU_reso = false ;
 	if(ADU_reso){
 	        if(Reso_cat_buffer < 1.3) reso_CAT = "highres";
 	        if(Reso_cat_buffer < 2. && Reso_cat_buffer >= 1.3) reso_CAT = "mediumres";
 	        if( Reso_cat_buffer >= 2.) reso_CAT = "lowres";	
 	 }
-//----------------new categorisation ----------------
+//-------------------------------------new categorisation -----------------------------------------------------------------------------------------------------------------------------------
 	bool PSD_cat = false ;
 	if(PSD_cat){
 		if(Reso_cat_buffer < 2.) reso_CAT = "highres";
@@ -310,6 +311,7 @@ void Plot_HEnergy_Voltage::Write_histo_tofile(float const & temp, int const & vo
 	if(allRUN == 1) Output_Files = new TFile((OutputDir+"/Eh_allruns_"+to_string(temp)+"mk.root").c_str(),"UPDATE");
 	if(allRUN == 0) Output_Files = new TFile((OutputDir+"/Eh_perrun_"+to_string(temp)+"mk_"+run_name.c_str()+"_"+to_string(voltage)+"_"+reso_CAT+"_"+Processed+".root").c_str(),"RECREATE");	
 	TParameter<Double_t> * resoHEAT = new TParameter<Double_t>("Resolution_heat", Reso_cat_buffer);
+//-------------------------------------Writting to output root file ------------------------------------------------------------------------------------------------------------------------------
 	if( run_name != "" && IS_PROCESSED==0) {
 		H_Ehee       ->Write();    
 		H_Eh         ->Write();
@@ -367,7 +369,7 @@ void Plot_HEnergy_Voltage::Write_histo_tofile(float const & temp, int const & vo
 	delete resoHEAT;
 	Output_Files->Close();
 }
-
+//------------------------------------- Method to get the size of the desired Energy bin---------------------------------------------------------------------------------------------
 Double_t Plot_HEnergy_Voltage::EpBinIndex(Double_t const & pt,std::vector<Double_t> const & binning) {
 
 	for (unsigned int i(1); i <  binning.size() ;  i++) {
@@ -376,7 +378,7 @@ Double_t Plot_HEnergy_Voltage::EpBinIndex(Double_t const & pt,std::vector<Double
 	}
 	return binning_vec.size();
 }
-
+//-------------------------------------Obsolete method not used anymore---------------------------------------------------------------------------------------------------------------
 Double_t Plot_HEnergy_Voltage::Kevee_weight(Double_t const &  Eh){
 
 	if(Eh < 1) return 0.01 ;
@@ -387,7 +389,7 @@ Double_t Plot_HEnergy_Voltage::Kevee_weight(Double_t const &  Eh){
 
 void Plot_HEnergy_Voltage::Loop_over_Chain(){
 
-//---------------- Calculate time spent in whole run----------------
+//------------------------------------- Calculate time spent in whole run--------------------------------------------------------------------------------------------------------------
 	Double_t temp_freq_heat_max = 0 ;
 	chain_voltage_pro->GetEntry(3);
 	temp_freq_heat_max = f_max_heat ;	
@@ -397,12 +399,12 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	chain_event_processed->GetEntry(chain_event_processed->GetEntries() - 1 );	
 	Double_t time_2 = (micro_step / temp_freq_heat_max) +  3600 * (N_partition - 1)  ;	
 	Ellapsed_time = ( time_2 - time_1 );	
-// ----------------Test time calculus alternatives ----------------
+// //-------------------------------------Test time calculus alternatives ----------------
 	chain_event_processed->GetEntry(0);
 	Double_t altime1 = 3600. - micro_step / temp_freq_heat_max ;
 	chain_event_processed->GetEntry(chain_event_processed->GetEntries() - 1 );
 	Double_t altime2 = altime1 + ((micro_step / temp_freq_heat_max)  + (3600. *( N_partition - 2))) ;
-//---------------- End time spent in whole run	calculus.----------------
+//------------------------------------- End time spent in whole run	calculus.----------------
 	chain_index   ->GetEntry(0) ;
 	chain_voltage ->GetEntry(Index_Calib);	
 	std::cout<<" Voltage and Temp for run : "<< Run_name <<" "<<Voltage<<" V "<<" "<< heat<<" mK run lasted for "<< (Ellapsed_time) / 3600.<< " h" <<std::endl; 
@@ -425,7 +427,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	}
 	std::cout<<" Creating  Histo "<<histname<<std::endl;	
 	
-//-------------Creating a binning for Chi2 studies--------------------------
+//-------------------------------------Creating a binning for Chi2 studies------------------------------------------------------------------------------
 	Int_t Nbin_sub100   = 0;
 	Int_t Nbin          = 0;
 	Double_t Binning_chi2[10000] = {0.} ;	
@@ -443,7 +445,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 			Binning_Dchi2[bin] = itbinchi2;		 
 	}		
 	
-//--------------Creating binning for heat spectrum in ee studies------
+//-------------------------------------Creating binning for heat spectrum in ee studies-----------------------------------------------------------------
 	binning_vec_kevee.clear();	
 	binning_vec_kevee.push_back(0.);
 	Double_t iterator_bin_ee = 0 ;
@@ -460,7 +462,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	for(int it = 0 ; it < binning_vec_kevee.size() ; it ++){	
 		Binning_keVee [it] = binning_vec_kevee.at(it);	
 	}	
-//---------Creating binning for heat spectrum in kev studies----------------
+//-------------------------------------Creating binning for heat spectrum in kev studies------------------------------------------------------------------------
 	binning_vec.clear();	
 	binning_vec.push_back(0.);
 	Double_t iterator_bin = 0 ;
@@ -497,7 +499,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	for(unsigned int it = 0 ; it < binning_vec_low_res.size() ; it ++){	
 		Binning_keVlow [it] = binning_vec_low_res.at(it);	
 	}
-//----------------HISTO DECLARATION----------------		
+//-------------------------------------Histo declaration--------------------------------------------------------------------------------------------------------------		
 	H_Eh          = new TH1D((histname).c_str(), (histname).c_str(),750., 0.,300.);
 	H_Eh          ->SetBins((int)binning_vec.size()-1, Binning_keV);	
 	H_Eh_lowres   = new TH1D((histname+"_lowres").c_str(), (histname+"_lowres").c_str(),750., 0.,300.);
@@ -571,7 +573,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	int rejected_dchi2NTD     = 0;
 	int buffer_time           = 0;
 	int Added_time            = 0 ;
-// ----------------Loop on both processed and calib , apply quality cuts----------------
+//-------------------------------------Loop on both processed and calib , apply quality cuts----------------------------------------------------------------------------
     int total_entries     = Nb_HeatEnergy;
     int cutchiion_entries = 0;
     int cutEion_entries   = 0;
@@ -592,8 +594,8 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 		   chi2B = chi2_norm[1];
 		}
 		double Ei = (EiA + EiB) /2.;
-//---------------TIME COMPUTATION--------------------------		
-		//this method miss the last partition -> it is added after the loop onto events.	
+//-------------------------------------TIME COMPUTATION--------------------------		
+//-------------------------------------this method miss the last partition -> it is added after the loop onto events.	Not the final stored value -------------------------
 		bool verbose = false;	
 		if( Mega_stp <= 10 && buffer_time > 3500. ){		
 		    Added_time += buffer_time;
@@ -604,7 +606,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 		      }
 		}
 		buffer_time = Mega_stp ;
-//---------------END TIME COMPUTATION--------------------------
+//-------------------------------------END TIME COMPUTATION------------------------------------------------------------------------------------------------------------------
 		chi2ionA = chi2_norm[2];
 		chi2ionB = chi2_norm[3];	
 		Double_t EpA = EhA * (1 + (fabs(Voltage)/3.));
@@ -614,14 +616,14 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
         G2_Eh_chi2->SetPoint(Ngraph_point, Eptot,(chi2_A/ndof_chi2));
         Ngraph_point++;
 		
-//---------------chi ionization
+//-------------------------------------Cut on chi2 ionization-------------------------------------------------------------------------------------------------------------------------
 		if((chi2ionA / 1024. ) > 1.8  && (chi2ionB / 1024. ) > 1.8){
 		    cutchiion_entries++;
 		    EiFid_vs_Eh_rejected->SetPoint(it,Eh, Ei);
 		    continue;
 		}
 		
-//---------------cut IonE 
+//-------------------------------------Cut on Ion Energy channel ---------------------------------------------------------------------------------------------------------------------------
 		if(Ei < IonCut && IonCut >= 0 && !Neg_cutIon) {
 		    cutEion_entries++;
 		    EiFid_vs_Eh_rejected->SetPoint(it,Eh, Ei);
@@ -630,13 +632,13 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 		    cutEion_entries++;
 		    continue;
 		}
-//---------------cut NbSiFid
+//-------------------------------------Cut on NbSi fiducial volume Heat channel only----------------------------------------------------------------------------------------------------------------
 		if(Detector == "NbSi209"  && pow(EpA - EpB,2) >= pow(0.6,2) + pow(0.045*Eptot,2) ) {
 		    cutFid_entries++;
 		    EiFid_vs_Eh_rejected->SetPoint(it,Eh, Ei);
 		    continue ;
 		}
-//---------------chi2 cut
+//-------------------------------------Cut on chi2 heat ---------------------------------------------------------------------------------------------------------------------------------------
 		if(!Pass_chi2_cut(Detector, Eptot, chi2A/1024., chi2B/ndof_chi2) ){			 
 			 chi2_cut_vs_Ep_fail-> Fill(Eptot, (chi2A/ndof_chi2), 1./EpBinIndex(Eptot, binning_vec));
 			 cutchiA_entries++;
@@ -645,7 +647,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 		}
 		chi2_cut_vs_Ep_pass -> Fill(Eptot, (chi2_A/ndof_chi2), 1./EpBinIndex(Eptot, binning_vec));		
 		
-//---------------delta chi2 cut
+//-------------------------------------Cut on delta chi2 -----------------------------------------------------------------------------------------------------------------------------------------
 		if(!Pass_Deltachi2_cut(Detector,chi2A/ndof_chi2, (chi2_fast[0]/ndof_chi2) ) ){			
 			Dchi2_vs_Ep_fail -> Fill(Eptot, (chi2A/ndof_chi2) - (chi2_fast[0]/ndof_chi2), 1./EpBinIndex(Eptot, binning_vec));
 			rejected_dchi2++;
@@ -654,13 +656,13 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 		
 		Reso_cat_buffer += Reso_cat; 
 		Dchi2_vs_Ep_pass -> Fill(EpA, (chi2_A/ndof_chi2) - (chi2_fast[0]/ndof_chi2), 1./EpBinIndex(EpA, binning_vec));
-		H_Ehee           -> Fill(EhA, 1./(EpBinIndex(EhA, binning_vec_kevee)));//*weight_detector));//
-		H_Eh             -> Fill(EpA, 1./(EpBinIndex(EpA, binning_vec)));//*weight_detector) );
-		H_EhBee          -> Fill(EhB, 1./(EpBinIndex(EhB, binning_vec_kevee)));//*weight_detector));
-		H_EhB            -> Fill(EpB, 1./(EpBinIndex(EpB, binning_vec)));//*weight_detector) );
-		H_Ehtotee        -> Fill(Eh, 1./(EpBinIndex(Eh, binning_vec_kevee)));//*weight_detector));
-		H_Ehtot          -> Fill(Eptot, 1./(EpBinIndex(Eptot, binning_vec)));//*weight_detector) );		
-		H_Eh_lowres      -> Fill(EpA, 1./(EpBinIndex(EpA, binning_vec_low_res)));// *weight_detector));
+		H_Ehee           -> Fill(EhA, 1./(EpBinIndex(EhA, binning_vec_kevee)));
+		H_Eh             -> Fill(EpA, 1./(EpBinIndex(EpA, binning_vec)));
+		H_EhBee          -> Fill(EhB, 1./(EpBinIndex(EhB, binning_vec_kevee)));
+		H_EhB            -> Fill(EpB, 1./(EpBinIndex(EpB, binning_vec)));
+		H_Ehtotee        -> Fill(Eh, 1./(EpBinIndex(Eh, binning_vec_kevee)));
+		H_Ehtot          -> Fill(Eptot, 1./(EpBinIndex(Eptot, binning_vec)));
+		H_Eh_lowres      -> Fill(EpA, 1./(EpBinIndex(EpA, binning_vec_low_res)));
 		H_EiFid          -> Fill(Ei);
 		H_EiA            -> Fill(EiA);
 		H_EiB            -> Fill(EiB);
@@ -670,12 +672,12 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 		
 	   H_Eh_noweight      -> Fill(EpA)  ;
 	   H_EhB_noweight     -> Fill(EpB)  ;
-	   H_Ehtot_noweight   -> Fill(Eptot,1./(0.1));//*weight_detector))   ;
+	   H_Ehtot_noweight   -> Fill(Eptot,1./(0.1));
 	   H_Ehee_noweight    -> Fill(EhA)  ; 
 	   H_EhBee_noweight   -> Fill(EhB)  ; 
 	   H_Ehtotee_noweight -> Fill(Eh);		
 	   EiFid_vs_Eh_passcut-> SetPoint(it,Eh, Ei);
-	   Ionration_vs_Ei    -> Fill(fabs(Ei) , Eh / fabs(Ei) , 1./(EpBinIndex(fabs(Ei), binning_vec_kevee)));//*weight_detector));
+	   Ionration_vs_Ei    -> Fill(fabs(Ei) , Eh / fabs(Ei) , 1./(EpBinIndex(fabs(Ei), binning_vec_kevee)));
 	   E_h_buf = Eh ;
 	   E_p_buf = Eptot ;
 	   weight  = (Ellapsed_time/(3600.*24.));
@@ -683,7 +685,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 
 		outTree_->Fill();
 	}
-//----------------END EVENT LOOP----------------
+//-------------------------------------END EVENT LOOP---------------------------------------------------------------------------------------------------------------------------------------
 	chain_event_processed      ->GetEntry(chain_event_processed      ->GetEntries()-1);
 	Added_time  += Mega_stp ;
 	time_lengh = new TParameter<double> (("timed_lenght_"+voltname+"V").c_str(),Added_time/(3600.*24.));	 
@@ -700,7 +702,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	Double_t psd_freq [15] = {0.};
 	Double_t psd_filt [15] = {0.};
 	Double_t temp_max_filt = 0 ;
-//---------------- PSD related compuation
+//------------------------------------- PSD related compuation----------------------------------------------------------------------------------------------------------------------------
 	for(int it = 0; it <  chain_voltage_pro->GetEntries() ; it++){	
 		chain_voltage_pro->GetEntry(it);
 		chain_event_Reso_processed ->GetEntry(it);
@@ -717,7 +719,6 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 		}		
 	}	
 	Reso_cat_buffer = sqrt(Reso_cat_buffer);
-	//reso_vs_time->SetPoint(point_time_reso,(Time_Crate - 49*365.25*3600*24) /(3600.*24.), Reso_cat_buffer);
 	point_time_reso++;
 	std::cout<< " Max PSD noise : "<< Reso_cat_buffer <<std::endl;		
 	Time_per_voltage = new TH1D ((histname+"_ellapsed_time").c_str(), (histname+"_ellapsed_time").c_str(),1,0.,1. );		
@@ -725,7 +726,7 @@ void Plot_HEnergy_Voltage::Loop_over_Chain(){
 	std::cout<<" Integral for renormalization "<< Time_per_voltage -> Integral() <<std::endl;	
 	Write_histo_tofile(heat, Voltage, Run_name);	
 }
-
+//-------------------------------------Method to loop only on processed events-------------------------------------------------------------------------------------------------------------
 void Plot_HEnergy_Voltage::Loop_over_Chain_processed(){	
 	chain_voltage_pro->GetEntry(0);
 	std::cout<<" Voltage and Temp for run : "<< Run_name <<" "<<polarion[0] -polarion[2]<<" V "<<" "<< heat<<" mK "<<std::endl; 
