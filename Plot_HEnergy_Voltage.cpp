@@ -151,11 +151,12 @@ void Plot_HEnergy_Voltage::Parse_List(){
         	    std::string temp_str_heat = line_list_IN.substr(Index_space , 4);
         	    std::string temp_str_list = line_list_IN.substr(0, Index_space );
         	    Double_t temp_heat = std::stod(temp_str_heat);                
-			    Heat_cat[ilist]	= temp_heat; 					
-		        std::cout<<" adding : /sps/edelweis/rootDataRun317/streams/"+prod+"/lists/"<<temp_str_list<< ".list Temp "<< Heat_cat[ilist]<< std::endl;
+			    Heat_cat[ilist]	= temp_heat; 
+			    std::string Sps_path = std::getenv("SPS_LINK") ;					
+		        std::cout<<" adding : "+Sps_path+"/rootDataRun317/streams/"+prod+"/lists/"<<temp_str_list<< ".list Temp "<< Heat_cat[ilist]<< std::endl;
 		        string file = temp_str_list ;		       
 		        std::string prefix_list = ""  ;		        
-		        if(local_list == 0) prefix_list = "/sps/edelweis/rootDataRun317/streams/"+prod+"/lists/" ;		
+		        if(local_list == 0) prefix_list = Sps_path+"/rootDataRun317/streams/"+prod+"/lists/" ;		
 		        std::cout<< prefix_list+file+".list"<<std::endl;       
 		        ifstream efficiencies((prefix_list+file+".list").c_str());
 		        std::string ListRun_name[100] = {""};
