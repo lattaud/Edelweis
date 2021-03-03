@@ -286,12 +286,13 @@ void Histo_reader_from_rootfile::Optimise_smoothing( std::vector<double>  data){
             NFit++;
         }while(fit_status == 4 && NFit < 5);
         if(Do_kernel){hist_buff_kernel->SetName("Smooth_spectrum");
-        hist_buff_kernel->SetFillStyle(0);}
-        TFile * Input_weighted_spectrum = new TFile("../PLOTTING/FEVRIER_TEST.root");
-        TH1D  * tempt_Hist_wgt = (TH1D*)Input_weighted_spectrum->Get("Fevrier_phonon_NbSi209_51");      
+        hist_buff_kernel->SetFillStyle(0);}              
         TFile * ouput_smooth_spectrum = new TFile(Form("Smooth_%s_%s.root",Detector.c_str(),RUN.c_str()),"RECREATE");
-        if(Do_kernel)hist_buff_kernel->Write();  
-        f_bkground->Write();        
+        if(Do_kernel)hist_buff_kernel->Write();
+        f_bkground->SetNpx(1500000) ;
+        f_bkground->Write();
+        TParameter<double>* Nhit = new TParameter<double>("Ncount",Histo_from_tree->Integral(Histo_from_tree->FindBin(0.690),Histo_from_tree->FindBin(300.),"Width"));
+        Nhit->Write();
         TH1D * tempt_Hist = (TH1D*)Input_file->Get(Form("Ephonon_pos%2.0f_tot_noweight",Voltage_user));
         tempt_Hist->SetLineColor(kRed);
         f_bkground->SetLineColor(kRed + 3);
@@ -343,7 +344,6 @@ void Histo_reader_from_rootfile::Optimise_smoothing( std::vector<double>  data){
             c->SaveAs(Form("Smoothed_picked_kernel_%s_%s.png",Detector.c_str(),RUN.c_str()));
         }
         ouput_smooth_spectrum->Close();
-        Input_weighted_spectrum->Close();        
 }
 //------------------------------------- Method to display numerous histo on the same pad-----------------------------------------------------------------------
 int Histo_reader_from_rootfile::color_rainbow(int i,int nbval){

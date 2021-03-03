@@ -7,7 +7,7 @@ from subprocess import call, PIPE, STDOUT, Popen
 
 
 List_Mass = ["15","20","30","40","50","100","500","1000"]
-List_Eicut = ["400.00"]#["0.00","200.00","-1000.00"]
+List_Eicut = ["500.00"]#["0.00","200.00","-1000.00"]
 
 for mass in List_Mass:
         for Cut in List_Eicut:

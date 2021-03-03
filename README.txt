@@ -23,6 +23,9 @@ To run this step, you need to  create a Txt file listing the name of the run lis
 exemple is provided in List_Run_physics.txt the temperature is also needed (by convention write 20mk this is only needed for labelling) .   
 To run the skimmer use the following command line :
 $ mkdir List
+$ make clean
+$ make
+$ ./Skimmer --Parity 0 --Temp 20 -o TEST_TO_DELETE -d NbSi209 --inputList Dummy.txt --IonCut 0 --prod prodk 
 
 
 
