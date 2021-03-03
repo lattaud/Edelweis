@@ -5,9 +5,9 @@ import argparse
 import datetime
 
 
-DirList = ["0.40"]#"-1000.00","-1000.00","0.00","0.20"
-Month_list =["Mars2019","Avril2019","Octobre2019","Novembre2019","Avril2020","Mai2020","Juin2020","ALL_physics"]
-Month_Acro_list =["tc","td","tj","tk","ud","ue","uf","*"]
+DirList = ["0.50"]#,"-1000.00","0.00","0.20"]
+Month_list =["ALL_physics"]#"Mars2019","Avril2019","Octobre2019","Novembre2019","Avril2020","Mai2020","Juin2020"
+Month_Acro_list =["*"]#"tc","td","tj","tk","ud","ue","uf",
 
 
 for iDir in DirList:

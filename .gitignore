@@ -4,5 +4,14 @@
 *.o
 *.pdf
 t*
-
-
+*png
+PLOTTING/DM_signal/*
+PLOTTING/Plot_output/*
+List/*
+PLOTTING/List_plot/*
+List_Run_mathis*
+*.list
+*.jpeg
+LIST*
+List_*
+Thorium_Bkg*
