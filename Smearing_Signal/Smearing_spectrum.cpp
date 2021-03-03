@@ -119,7 +119,7 @@ double EffCorr_Quantified_spectrum(double *x,double *par){
 	double F  = par[1];
 	double verbosity = 0;
 	TF1*   spectrum =  new TF1("spectrum",Spectrum_from_graph,0.0,1.,0);
-	TF1*   efficiency =  new TF1("eff",Efficiency_from_graph,0.01,3.,1);
+	TF1*   efficiency =  new TF1("eff",Efficiency_from_graph,0.001,1.5,1);
 	efficiency->SetParameter(0,V);
 	double trueErmax=200.;//spectrum->GetXmax();
 	double sum=0;
